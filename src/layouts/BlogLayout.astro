@@ -1,7 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
-
+import { url } from '../utils/url';
 interface Props {
   title: string;
   description?: string;
@@ -68,14 +68,14 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
               <span class="meta-item post-category-item">
                 <span class="meta-sep">·</span>
                 <span class="category-label">category:</span>
-                <a href={`/categories/${category}`} class="post-category">{category}</a>
+                <a href={url(`/categories/${category}`)} class="post-category">{category}</a>
               </span>
             )}
             {series && (
               <span class="meta-item post-series-item">
                 <span class="meta-sep">·</span>
                 <span class="series-label">series:</span>
-                <a href="/series" class="series-link">{series}</a>
+                <a href={url('/series')} class="series-link">{series}</a>
                 {seriesOrder && <span class="series-order">#{seriesOrder}</span>}
               </span>
             )}
@@ -89,9 +89,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
 
           {tags.length > 0 && (
             <div class="post-tags">
-              <span class="tags-label">tags:</span>
               {tags.map(tag => (
-                <a href={`/tags/${tag}`} class="tag">{tag}</a>
+                <a href={url(`/tags/${tag}`)} class="tag">{tag}</a>
               ))}
             </div>
           )}
@@ -106,7 +105,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
         {seriesPosts.length > 0 && (
           <aside class="series-nav">
             <p class="series-nav-title">
-              <a href="/series">« {series} »</a> series
+              <a href={url('/series')}>« {series} »</a> series
             </p>
             <ol class="series-nav-list">
               {seriesPosts.map((p, i) => {
@@ -119,7 +118,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
                         {p.data.title} <em class="here">← current</em>
                       </span>
                     ) : (
-                      <a href={`/blog/${p.id}`} class="sn-title">{p.data.title}</a>
+                      <a href={url(`/blog/${p.id}`)} class="sn-title">{p.data.title}</a>
                     )}
                   </li>
                 );

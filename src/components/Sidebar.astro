@@ -1,4 +1,6 @@
 ---
+import { url } from '../utils/url';
+
 interface Props {
   hasToc?: boolean;
 }
@@ -6,19 +8,22 @@ interface Props {
 const { hasToc = false } = Astro.props;
 
 const nav = [
-  { href: '/about',      label: 'about' },
-  { href: '/blog',       label: 'posts' },
-  { href: '/notes',      label: 'notes' },
-  { href: '/categories', label: 'categories' },
-  { href: '/series',     label: 'series' },
-  { href: '/tags',       label: 'tags' },
-  { href: '/archive',    label: 'archive' },
+  { href: url('/about'),      label: 'about' },
+  { href: url('/blog'),       label: 'posts' },
+  { href: url('/notes'),      label: 'notes' },
+  { href: url('/categories'), label: 'categories' },
+  { href: url('/series'),     label: 'series' },
+  { href: url('/tags'),       label: 'tags' },
+  { href: url('/archive'),    label: 'archive' },
 ];
 
+const homeUrl = url('/');
+const avatarUrl = url('/avatar.svg');
+const rssUrl = url('/rss.xml');
 const sourceLink = { href: 'https://github.com/netologist/breath', label: 'github repo' };
 const current = Astro.url.pathname;
 const isActive = (href: string) =>
-  href === '/' ? current === '/' : current.startsWith(href);
+  href === homeUrl ? current === homeUrl : current.startsWith(href);
 ---
 
 <!-- Mobile Sticky Top Header -->
@@ -39,9 +44,9 @@ const isActive = (href: string) =>
       </svg>
     </button>
 
-    <a href="/" class="mobile-brand">
+    <a href={homeUrl} class="mobile-brand">
       <img
-        src="/avatar.svg"
+        src={avatarUrl}
         width="26"
         height="26"
         alt="John Doe"
@@ -96,16 +101,16 @@ const isActive = (href: string) =>
   </div>
 
   <div class="sidebar-identity">
-    <a href="/" class="avatar-link">
+    <a href={homeUrl} class="avatar-link">
       <img
-        src="/avatar.svg"
+        src={avatarUrl}
         width="80"
         height="80"
         alt="John Doe"
         class="avatar"
       />
     </a>
-    <a href="/" class="identity-name">
+    <a href={homeUrl} class="identity-name">
       <span class="name-main">John Doe</span>
       <span class="name-aka">a.k.a @johndoe</span>
     </a>
@@ -125,7 +130,7 @@ const isActive = (href: string) =>
         <circle cx="4" cy="4" r="2"></circle>
       </svg>
     </a>
-    <a href="/rss.xml" title="RSS Feed" aria-label="RSS Feed">
+    <a href={rssUrl} title="RSS Feed" aria-label="RSS Feed">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rss">
         <path d="M4 11a9 9 0 0 1 9 9"></path>
         <path d="M4 4a16 16 0 0 1 16 16"></path>

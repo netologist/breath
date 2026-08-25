@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
-
+import { url } from '../utils/url';
 const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
@@ -54,7 +54,7 @@ function shortDate(d: Date) {
         <section class="category-block">
           <div class="category-header">
             <h3 class="category-title">
-              <a href={`/categories/${cat}`} class="category-link">{cat}</a>
+              <a href={url(`/categories/${cat}`)} class="category-link">{cat}</a>
               <span class="cat-count">({totalCount} item{totalCount === 1 ? '' : 's'})</span>
             </h3>
           </div>
@@ -69,7 +69,7 @@ function shortDate(d: Date) {
                 {group.posts.map(post => (
                   <li>
                     <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
-                    <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                    <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
                   </li>
                 ))}
               </ul>
@@ -88,7 +88,7 @@ function shortDate(d: Date) {
                     <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
                       {stageLabel[note.data.stage]}
                     </span>
-                    <a href={`/notes/${note.id}`}>{note.data.title}</a>
+                    <a href={url(`/notes/${note.id}`)}>{note.data.title}</a>
                   </li>
                 ))}
               </ul>

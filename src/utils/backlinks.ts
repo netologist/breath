@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
+const base = (process.env.BASE_PATH || (process.env.GITHUB_ACTIONS ? '/breath' : '')).replace(/\/$/, '');
+
 function slugify(str: string): string {
   return str
     .toLowerCase()
@@ -51,7 +53,7 @@ export function buildBacklinks(): Record<string, BacklinkEntry[]> {
   const noteMap = buildNoteMap();
   const backlinks: Record<string, BacklinkEntry[]> = {};
   const WIKILINK_RE = /\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]/g;
-  const MD_LINK_RE = /\[([^\]]+)\]\(\/notes\/([^\s\)]+)\)/g;
+  const MD_LINK_RE = /\[([^\]]+)\]\((?:\/breath)?\/notes\/([^\s\)]+)\)/g;
 
   function scanDir(dirPath: string, type: 'note' | 'blog') {
     let files: string[];
@@ -74,7 +76,7 @@ export function buildBacklinks(): Record<string, BacklinkEntry[]> {
       // Extract title from frontmatter
       const titleMatch = raw.match(/^title:\s*["']?(.+?)["']?\s*$/m);
       const sourceTitle = titleMatch ? titleMatch[1].trim() : sourceId;
-      const sourceUrl = type === 'blog' ? `/blog/${sourceId}` : `/notes/${sourceId}`;
+      const sourceUrl = type === 'blog' ? `${base}/blog/${sourceId}` : `${base}/notes/${sourceId}`;
 
       // Scan [[wikilinks]]
       WIKILINK_RE.lastIndex = 0;

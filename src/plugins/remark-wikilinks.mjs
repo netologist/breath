@@ -2,6 +2,8 @@ import { visit } from 'unist-util-visit';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
+const base = (process.env.BASE_PATH || (process.env.GITHUB_ACTIONS ? '/breath' : '')).replace(/\/$/, '');
+
 /** Converts text into a clean URL-friendly slug */
 function slugify(str) {
   return str
@@ -51,7 +53,7 @@ function buildNoteMap() {
 }
 
 /**
- * Remark plugin: [[target]] and [[target|custom label]] -> <a href="/notes/id">label</a>
+ * Remark plugin: [[target]] and [[target|custom label]] -> <a href="/breath/notes/id">label</a>
  */
 export function remarkWikilinks() {
   const noteMap = buildNoteMap();
@@ -83,7 +85,7 @@ export function remarkWikilinks() {
 
         parts.push({
           type: 'link',
-          url: `/notes/${id}`,
+          url: `${base}/notes/${id}`,
           title: null,
           data: {
             hProperties: {

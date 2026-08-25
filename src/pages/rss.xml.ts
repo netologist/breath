@@ -1,7 +1,7 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import type { APIContext } from 'astro';
-
+import { base } from '../utils/url';
 export async function GET(context: APIContext) {
   const blog = (await getCollection('blog', ({ data }) => !data.draft))
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
@@ -14,7 +14,7 @@ export async function GET(context: APIContext) {
       title: post.data.title,
       pubDate: post.data.date,
       description: post.data.description,
-      link: `/blog/${post.id}/`,
+      link: `${base}/blog/${post.id}/`,
       categories: [post.data.category, ...(post.data.tags ?? [])].filter(Boolean) as string[],
     })),
     customData: `<language>en-us</language>`,

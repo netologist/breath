@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import type { BacklinkEntry } from '../utils/backlinks';
+import { url } from '../utils/url';
 
 interface Props {
   title: string;
@@ -69,7 +70,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
               <span class="meta-item">
                 <span class="meta-sep">·</span>
                 <span class="meta-label">category:</span>
-                <a href={`/categories/${category}`} class="note-category">{category}</a>
+                <a href={url(`/categories/${category}`)} class="note-category">{category}</a>
               </span>
             )}
           </div>
@@ -78,7 +79,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
             <div class="note-tags">
               <span class="tags-label">tags:</span>
               {tags.map(tag => (
-                <a href={`/tags/${tag}`} class="tag">{tag}</a>
+                <a href={url(`/tags/${tag}`)} class="tag">{tag}</a>
               ))}
             </div>
           )}
@@ -91,7 +92,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
         </div>
 
         <footer class="note-footer">
-          <p>This note is part of the <a href="/notes">Digital Garden</a> — a collection of connected, evolving thoughts.</p>
+          <p>This note is part of the <a href={url('/notes')}>Digital Garden</a> — a collection of connected, evolving thoughts.</p>
         </footer>
 
         {backlinks.length > 0 && (
@@ -100,7 +101,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
             <ul class="backlinks-list">
               {backlinks.map(b => (
                 <li>
-                  <a href={b.url ?? `/notes/${b.id}`} class="backlink-item">
+                  <a href={b.url ?? url(`/notes/${b.id}`)} class="backlink-item">
                     <span class="backlink-icon">{b.type === 'blog' ? '📝' : '🌲'}</span>
                     <span class="backlink-title">{b.title}</span>
                     {b.type === 'blog' && <span class="backlink-badge">post</span>}
@@ -251,7 +252,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     const href = target.getAttribute('href');
     if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
 
-    const match = href.match(/^\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
+    const match = href.match(/(?:\/breath)?\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
     if (match) {
       if (window.location.pathname === href || window.location.pathname === `${href}/`) {
         return;
@@ -263,7 +264,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       loadNoteIntoDrawer(href);
     }
   }
-
   function attachDrawerInternalLinks() {
     if (!drawerBody) return;
     const links = drawerBody.querySelectorAll('a');

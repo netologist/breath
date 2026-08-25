@@ -2,7 +2,7 @@
 import { getCollection, getEntry, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
-
+import { url, base } from '../../utils/url';
 const allNotes = await getCollection('notes');
 
 // Fetch and render the flagship garden entry note
@@ -67,7 +67,7 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
           <div class="garden-intro-tags">
             <span class="tags-label">tags:</span>
             {gardenEntry.data.tags.map(tag => (
-              <a href={`/tags/${tag}`} class="tag">{tag}</a>
+              <a href={url(`/tags/${tag}`)} class="tag">{tag}</a>
             ))}
           </div>
         )}
@@ -98,7 +98,7 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     {tags.length > 0 && (
       <div class="tag-cloud">
         {tags.map(([tag, count]) => (
-          <a href={`/tags/${tag}`} class="tag">
+          <a href={url(`/tags/${tag}`)} class="tag">
             {tag} <span class="tag-count">({count})</span>
           </a>
         ))}
@@ -119,7 +119,7 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
             <ul class="listing note-listing">
               {byStage[stage].map(note => (
                 <li class="note-list-item" data-title={note.data.title.toLowerCase()} data-tags={note.data.tags.join(' ').toLowerCase()} data-desc={(note.data.description ?? '').toLowerCase()}>
-                  <a href={`/notes/${note.id}`} class="note-link" data-note-id={note.id}>
+                  <a href={url(`/notes/${note.id}`)} class="note-link" data-note-id={note.id}>
                     <span class="note-bullet">·</span>
                     <span class="note-title-text">{note.data.title}</span>
                   </a>
@@ -192,8 +192,8 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
   const noteCache = new Map<string, string>();
 
   // Fetch notes metadata for instant search and popover previews
-  fetch('/api/notes.json')
-    .then(r => r.json())
+  const apiNotesUrl = (document.querySelector('meta[name="astro-base"]') as HTMLMetaElement)?.content || `${window.location.pathname.startsWith('/breath') ? '/breath' : ''}/api/notes.json`;
+  fetch(apiNotesUrl)
     .then((data: NoteData[]) => {
       data.forEach(note => {
         notesMap.set(note.id, note);
@@ -259,7 +259,7 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     const href = target.getAttribute('href');
     if (!href) return;
 
-    const match = href.match(/^\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
+    const match = href.match(/(?:\/breath)?\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
     if (match) {
       const noteId = match[1];
       const note = notesMap.get(noteId);
@@ -364,12 +364,11 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     const href = target.getAttribute('href');
     if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
 
-    const match = href.match(/^\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
+    const match = href.match(/(?:\/breath)?\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
     if (match) {
       if (window.location.pathname === href || window.location.pathname === `${href}/`) {
         return;
       }
-
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
       e.preventDefault();

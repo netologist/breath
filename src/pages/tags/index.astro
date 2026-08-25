@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
-
+import { url } from '../../utils/url';
 const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 const allNotes = await getCollection('notes');
 
@@ -39,7 +39,7 @@ const sortedTags = Object.entries(tagMap).sort((a, b) => b[1].total - a[1].total
 
     <div class="tag-cloud-page">
       {sortedTags.map(([tag, counts]) => (
-        <a href={`/tags/${tag}`} class="tag-card">
+        <a href={url(`/tags/${tag}`)} class="tag-card">
           <span class="tag-name">#{tag}</span>
           <span class="tag-meta">
             {counts.posts > 0 && <span class="tag-sub-count">{counts.posts} article{counts.posts === 1 ? '' : 's'}</span>}

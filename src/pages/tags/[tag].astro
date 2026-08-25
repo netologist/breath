@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
-
+import { url } from '../../utils/url';
 export async function getStaticPaths() {
   const allPosts = await getCollection('blog', ({ data }) => !data.draft);
   const allNotes = await getCollection('notes');
@@ -44,7 +44,7 @@ function shortDate(d: Date) {
   <main class="site-content">
     <div class="tag-page-header">
       <div class="tag-breadcrumb">
-        <a href="/tags">← All Tags</a>
+        <a href={url('/tags')}>← All Tags</a>
       </div>
       <h2 class="page-title">
         <span class="tag-hash">#</span>{tag}
@@ -63,7 +63,7 @@ function shortDate(d: Date) {
           {posts.map(post => (
             <li>
               <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
-              <a href={`/blog/${post.id}`}>{post.data.title}</a>
+              <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
             </li>
           ))}
         </ul>
@@ -83,7 +83,7 @@ function shortDate(d: Date) {
               <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
                 {stageLabel[note.data.stage]}
               </span>
-              <a href={`/notes/${note.id}`}>{note.data.title}</a>
+              <a href={url(`/notes/${note.id}`)}>{note.data.title}</a>
             </li>
           ))}
         </ul>

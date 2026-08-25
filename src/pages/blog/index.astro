@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
-
+import { url } from '../../utils/url';
 const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
@@ -33,7 +33,7 @@ function shortDate(d: Date) {
     {tags.length > 0 && (
       <div class="tag-cloud">
         {tags.map(([tag, count]) => (
-          <a href={`/tags/${tag}`} class="tag">
+          <a href={url(`/tags/${tag}`)} class="tag">
             {tag} <span class="tag-count">({count})</span>
           </a>
         ))}
@@ -47,7 +47,7 @@ function shortDate(d: Date) {
           {byYear[year].map(post => (
             <li>
               <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
-              <a href={`/blog/${post.id}`}>{post.data.title}</a>
+              <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
             </li>
           ))}
         </ul>
