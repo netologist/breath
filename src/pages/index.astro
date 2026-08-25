@@ -1,0 +1,66 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Sidebar from '../components/Sidebar.astro';
+
+const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const byYear: Record<string, typeof allPosts> = {};
+for (const post of allPosts) {
+  const y = post.data.date.getFullYear().toString();
+  (byYear[y] ??= []).push(post);
+}
+const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
+
+function shortDate(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+---
+
+<BaseLayout title="Breath" description="A minimalist digital garden and engineering blog.">
+  <Sidebar />
+
+  <main class="site-content">
+    <div class="blog-header-bar">
+      <h3 class="blog-title">
+        <span class="prompt">$ tail -f /var/log/thoughts</span>
+      </h3>
+    </div>
+
+    {years.map(year => (
+      <section>
+        <p class="year-heading">{year}</p>
+        <ul class="listing">
+          {byYear[year].map(post => (
+            <li>
+              <time datetime={post.data.date.toISOString()}>
+                {shortDate(post.data.date)}
+              </time>
+              <a href={`/blog/${post.id}`}>{post.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </main>
+</BaseLayout>
+
+<style>
+  .blog-header-bar {
+    margin-bottom: var(--space-xl);
+  }
+
+  .blog-title {
+    margin: 0;
+    line-height: 1.1;
+    font-family: var(--font-main);
+  }
+
+  .prompt {
+    font-size: 1.95rem;
+    font-weight: 700;
+    color: rgb(187, 34, 34);
+    letter-spacing: -0.01em;
+  }
+</style>

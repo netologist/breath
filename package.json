@@ -1,0 +1,36 @@
+{
+  "name": "breath",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "A minimalist Digital Garden & Engineering Blog theme for Astro",
+  "license": "MIT",
+  "author": "John Doe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/netologist/breath.git"
+  },
+  "keywords": [
+    "astro",
+    "astro-theme",
+    "digital-garden",
+    "evergreen-notes",
+    "blog",
+    "minimalist",
+    "markdown",
+    "wikilinks"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "@astrojs/rss": "^4.0.19",
+    "astro": "^7.2.2"
+  }
+}

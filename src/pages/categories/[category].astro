@@ -1,0 +1,152 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+  const allNotes = await getCollection('notes');
+
+  const catSet = new Set<string>();
+  allPosts.forEach(p => catSet.add(p.data.category ?? 'general'));
+  allNotes.forEach(n => catSet.add(n.data.category ?? 'general'));
+
+  return Array.from(catSet).map(category => {
+    const posts = allPosts
+      .filter(p => (p.data.category ?? 'general') === category)
+      .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+    const stageOrder = { evergreen: 0, budding: 1, seedling: 2 };
+    const notes = allNotes
+      .filter(n => (n.data.category ?? 'general') === category)
+      .sort((a, b) => stageOrder[a.data.stage] - stageOrder[b.data.stage]);
+
+    return {
+      params: { category },
+      props: { category, posts, notes },
+    };
+  });
+}
+
+const { category, posts, notes } = Astro.props;
+
+const stageLabel = { seedling: '🌱 Seedling', budding: '🌿 Budding', evergreen: '🌲 Evergreen' };
+const stageCls   = { seedling: 'stage-seedling', budding: 'stage-budding', evergreen: 'stage-evergreen' };
+
+function shortDate(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+---
+
+<BaseLayout title={`${category} — Category`} description={`Articles and notes in category ${category}.`}>
+  <Sidebar />
+
+  <main class="site-content">
+    <div class="cat-page-header">
+      <div class="cat-breadcrumb">
+        <a href="/categories">← All Categories</a>
+      </div>
+      <h2 class="page-title">
+        <span class="cat-label">Category:</span> {category}
+        <span class="count">{posts.length + notes.length}</span>
+      </h2>
+    </div>
+
+    <!-- 1. Articles -->
+    {posts.length > 0 && (
+      <section class="cat-section">
+        <h3 class="section-title">
+          <span class="section-icon">📝</span> Articles
+          <span class="section-count">({posts.length})</span>
+        </h3>
+        <ul class="listing">
+          {posts.map(post => (
+            <li>
+              <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
+              <a href={`/blog/${post.id}`}>{post.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <!-- 2. Notes -->
+    {notes.length > 0 && (
+      <section class="cat-section">
+        <h3 class="section-title">
+          <span class="section-icon">🌲</span> Notes
+          <span class="section-count">({notes.length})</span>
+        </h3>
+        <ul class="listing note-listing">
+          {notes.map(note => (
+            <li>
+              <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
+                {stageLabel[note.data.stage]}
+              </span>
+              <a href={`/notes/${note.id}`}>{note.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {posts.length === 0 && notes.length === 0 && (
+      <p class="empty-msg">No content found in this category.</p>
+    )}
+  </main>
+</BaseLayout>
+
+<style>
+  .cat-page-header {
+    margin-bottom: var(--space-xl);
+  }
+  .cat-breadcrumb {
+    margin-bottom: var(--space-sm);
+  }
+  .cat-breadcrumb a {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition);
+  }
+  .cat-breadcrumb a:hover {
+    color: var(--text-link);
+    text-decoration: underline;
+  }
+  .cat-label {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  .cat-section {
+    margin-bottom: var(--space-xl);
+  }
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-sm) 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-icon {
+    font-size: 0.9em;
+  }
+  .stage-badge-small {
+    font-size: 0.72rem;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-weight: 500;
+    line-height: 1.2;
+    flex-shrink: 0;
+    margin-right: 6px;
+  }
+  .empty-msg {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: var(--space-xl) 0;
+  }
+</style>

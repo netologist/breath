@@ -1,0 +1,97 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Sidebar from '../../../components/Sidebar.astro';
+
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+const allNotes = await getCollection('notes');
+
+const tagMap: Record<string, { posts: number; notes: number; total: number }> = {};
+
+allPosts.forEach(post => {
+  (post.data.tags ?? []).forEach(tag => {
+    tagMap[tag] ??= { posts: 0, notes: 0, total: 0 };
+    tagMap[tag].posts += 1;
+    tagMap[tag].total += 1;
+  });
+});
+
+allNotes.forEach(note => {
+  (note.data.tags ?? []).forEach(tag => {
+    tagMap[tag] ??= { posts: 0, notes: 0, total: 0 };
+    tagMap[tag].notes += 1;
+    tagMap[tag].total += 1;
+  });
+});
+
+const sortedTags = Object.entries(tagMap).sort((a, b) => b[1].total - a[1].total);
+---
+
+<BaseLayout title="Tags" description="Browse all articles and digital garden notes by topic tags.">
+  <Sidebar />
+
+  <main class="site-content">
+    <h2 class="page-title">
+      tags
+      <span class="count">{sortedTags.length}</span>
+    </h2>
+    <p class="page-desc">Thematic tag index connecting essays, guides, and digital garden notes.</p>
+
+    <div class="tag-cloud-page">
+      {sortedTags.map(([tag, counts]) => (
+        <a href={`/tags/${tag}`} class="tag-card">
+          <span class="tag-name">#{tag}</span>
+          <span class="tag-meta">
+            {counts.posts > 0 && <span class="tag-sub-count">{counts.posts} article{counts.posts === 1 ? '' : 's'}</span>}
+            {counts.posts > 0 && counts.notes > 0 && <span class="tag-sep">·</span>}
+            {counts.notes > 0 && <span class="tag-sub-count">{counts.notes} note{counts.notes === 1 ? '' : 's'}</span>}
+          </span>
+        </a>
+      ))}
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .tag-cloud-page {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .tag-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: border-color var(--transition), transform var(--transition);
+  }
+  .tag-card:hover {
+    border-color: var(--text-link);
+    transform: translateY(-1px);
+    text-decoration: none;
+  }
+  .tag-name {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .tag-card:hover .tag-name {
+    color: var(--text-link);
+  }
+  .tag-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+  .tag-sep {
+    color: var(--border);
+  }
+</style>

@@ -1,0 +1,31 @@
+---
+import { getCollection, render } from 'astro:content';
+import NoteLayout from '../../layouts/NoteLayout.astro';
+import { buildBacklinks } from '../../utils/backlinks.ts';
+const allBacklinks = buildBacklinks();
+
+export async function getStaticPaths() {
+  const notes = await getCollection('notes');
+  return notes.map(note => ({
+    params: { slug: note.id },
+    props: { note },
+  }));
+}
+
+const { note } = Astro.props;
+const { Content, headings } = await render(note);
+---
+
+<NoteLayout
+  title={note.data.title}
+  description={note.data.description}
+  stage={note.data.stage}
+  tags={note.data.tags}
+  category={note.data.category}
+  created={note.data.created}
+  updated={note.data.updated}
+  headings={headings}
+  backlinks={allBacklinks[note.id] ?? []}
+>
+  <Content />
+</NoteLayout>

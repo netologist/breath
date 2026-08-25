@@ -1,0 +1,168 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Sidebar from '../components/Sidebar.astro';
+
+const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const allNotes = await getCollection('notes');
+
+interface CategoryGroup {
+  posts: typeof allPosts;
+  notes: typeof allNotes;
+}
+
+const byCategory: Record<string, CategoryGroup> = {};
+
+for (const post of allPosts) {
+  const cat = post.data.category ?? 'general';
+  (byCategory[cat] ??= { posts: [], notes: [] }).posts.push(post);
+}
+
+for (const note of allNotes) {
+  const cat = note.data.category ?? 'general';
+  (byCategory[cat] ??= { posts: [], notes: [] }).notes.push(note);
+}
+
+const categories = Object.keys(byCategory).sort((a, b) =>
+  (byCategory[b].posts.length + byCategory[b].notes.length) -
+  (byCategory[a].posts.length + byCategory[a].notes.length)
+);
+
+const stageLabel = { seedling: '🌱 Seedling', budding: '🌿 Budding', evergreen: '🌲 Evergreen' };
+const stageCls   = { seedling: 'stage-seedling', budding: 'stage-budding', evergreen: 'stage-evergreen' };
+
+function shortDate(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+---
+
+<BaseLayout title="Categories" description="Index of all articles and evergreen notes organized by topic.">
+  <Sidebar />
+  <main class="site-content">
+    <h2 class="page-title">
+      categories
+      <span class="count">{categories.length}</span>
+    </h2>
+    <p class="page-desc">All articles and digital garden notes organized by category.</p>
+
+    {categories.map(cat => {
+      const group = byCategory[cat];
+      const totalCount = group.posts.length + group.notes.length;
+      return (
+        <section class="category-block">
+          <div class="category-header">
+            <h3 class="category-title">
+              <a href={`/categories/${cat}`} class="category-link">{cat}</a>
+              <span class="cat-count">({totalCount} item{totalCount === 1 ? '' : 's'})</span>
+            </h3>
+          </div>
+
+          <!-- Blog Posts Group -->
+          {group.posts.length > 0 && (
+            <div class="group-wrapper">
+              <h4 class="sub-group-title">
+                <span class="group-icon">📝</span> Articles ({group.posts.length})
+              </h4>
+              <ul class="listing">
+                {group.posts.map(post => (
+                  <li>
+                    <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
+                    <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <!-- Notes Group -->
+          {group.notes.length > 0 && (
+            <div class="group-wrapper">
+              <h4 class="sub-group-title">
+                <span class="group-icon">🌲</span> Notes ({group.notes.length})
+              </h4>
+              <ul class="listing note-group-listing">
+                {group.notes.map(note => (
+                  <li class="note-item-simple">
+                    <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
+                      {stageLabel[note.data.stage]}
+                    </span>
+                    <a href={`/notes/${note.id}`}>{note.data.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      );
+    })}
+  </main>
+</BaseLayout>
+
+<style>
+  .category-block {
+    margin-bottom: var(--space-xl);
+  }
+  .category-header {
+    margin-bottom: var(--space-sm);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .category-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .category-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    text-transform: capitalize;
+  }
+  .category-link:hover {
+    color: var(--text-link);
+    text-decoration: underline;
+  }
+  .group-wrapper {
+    margin-top: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding-left: 12px;
+    border-left: 2px solid var(--border);
+  }
+  .sub-group-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .group-icon {
+    font-size: 0.85em;
+  }
+  .note-group-listing {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .note-item-simple {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+  }
+  .stage-badge-small {
+    font-size: 0.72rem;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-weight: 500;
+    line-height: 1.2;
+    flex-shrink: 0;
+  }
+</style>

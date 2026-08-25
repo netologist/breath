@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Sidebar from '../components/Sidebar.astro';
+---
+
+<BaseLayout title="About" description="About John Doe and the Breath digital garden theme.">
+  <Sidebar />
+
+  <main class="site-content">
+    <h2 class="page-title">about</h2>
+    <p class="page-desc">Engineer, tinkerer, and systems thinker.</p>
+
+    <div class="about-prose prose">
+      <p>
+        Hi, I'm <strong>John Doe</strong>. I build scalable backend systems, distributed architectures, and developer tools.
+      </p>
+
+      <p>
+        This website is built with <strong>Breath</strong>, a minimalist digital garden and engineering blog theme for <a href="https://astro.build" target="_blank" rel="noopener">Astro</a>. It blends traditional long-form essays with an evolving, interlinked knowledge garden.
+      </p>
+
+      <h3>Philosophy</h3>
+      <p>
+        I believe in deep modules, ruthless simplification, and tending thoughts over time. Writing is the highest-leverage way to refine mental models and share learnings with the engineering community.
+      </p>
+
+      <h3>Stack & Colophon</h3>
+      <ul>
+        <li><strong>Framework:</strong> Astro 5+ (zero client framework overhead)</li>
+        <li><strong>Typography:</strong> Yanone Kaffeesatz & JetBrains Mono</li>
+        <li><strong>Styling:</strong> Pure CSS variables, responsive drawers, strict dark/light contrast</li>
+        <li><strong>Knowledge Graph:</strong> Bi-directional wikilinks & Andy Matuschak-style stacked note previews</li>
+      </ul>
+
+      <h3>Get in Touch</h3>
+      <p>
+        Find me on <a href="https://github.com/netologist/breath" target="_blank" rel="noopener">GitHub</a> or reach out via <a href="mailto:john.doe@example.com">email</a>.
+      </p>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .page-title {
+    margin-bottom: 0.35em;
+  }
+</style>
