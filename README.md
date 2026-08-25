@@ -69,7 +69,7 @@ Visit `http://localhost:4321` in your browser.
 │   │   ├── BlogLayout.astro  # Blog article layout with sticky TOC
 │   │   └── NoteLayout.astro  # Digital garden note layout with backlinks & drawers
 │   ├── pages/
-│   │   ├── index.astro       # Homepage with recent writings
+│   │   ├── index.astro       # Homepage with recent posts
 │   │   ├── about.astro       # About page
 │   │   ├── blog/             # Blog index and [slug] pages
 │   │   ├── notes/            # Digital garden index and [slug] pages

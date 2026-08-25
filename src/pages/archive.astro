@@ -18,14 +18,14 @@ function longDate(d: Date) {
 }
 ---
 
-<BaseLayout title="Archive" description="Chronological timeline of all published writing.">
+<BaseLayout title="Archive" description="Chronological timeline of all published posts.">
   <Sidebar />
   <main class="site-content">
     <h2 class="page-title">
       archive
       <span class="count">{allPosts.length}</span>
     </h2>
-    <p class="page-desc">Complete chronological archive of all published articles.</p>
+    <p class="page-desc">Complete chronological archive of all published posts.</p>
 
     {years.map(year => (
       <section>
