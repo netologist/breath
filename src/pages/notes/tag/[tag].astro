@@ -3,6 +3,8 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Sidebar from '../../../components/Sidebar.astro';
 import { url } from '../../../utils/url';
+import { formatYMD, getEffectiveDate, sortByDate } from '../../../utils/date';
+
 export async function getStaticPaths() {
   const allPosts = await getCollection('blog', ({ data }) => !data.draft);
   const allNotes = await getCollection('notes');
@@ -12,14 +14,15 @@ export async function getStaticPaths() {
   allNotes.forEach(n => (n.data.tags ?? []).forEach(t => tagSet.add(t)));
 
   return Array.from(tagSet).map(tag => {
-    const posts = allPosts
-      .filter(p => (p.data.tags ?? []).includes(tag))
-      .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+    const posts = sortByDate(
+      allPosts.filter(p => (p.data.tags ?? []).includes(tag)),
+      'updated'
+    );
 
-    const stageOrder = { evergreen: 0, budding: 1, seedling: 2 };
-    const notes = allNotes
-      .filter(n => (n.data.tags ?? []).includes(tag))
-      .sort((a, b) => stageOrder[a.data.stage] - stageOrder[b.data.stage]);
+    const notes = sortByDate(
+      allNotes.filter(n => (n.data.tags ?? []).includes(tag)),
+      'updated'
+    );
 
     return {
       params: { tag },
@@ -32,10 +35,6 @@ const { tag, posts, notes } = Astro.props;
 
 const stageLabel = { seedling: '🌱 Seedling', budding: '🌿 Budding', evergreen: '🌲 Evergreen' };
 const stageCls   = { seedling: 'stage-seedling', budding: 'stage-budding', evergreen: 'stage-evergreen' };
-
-function shortDate(d: Date) {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 ---
 
 <BaseLayout title={`#${tag} — Tag`} description={`Articles and notes tagged #${tag}.`}>
@@ -60,12 +59,15 @@ function shortDate(d: Date) {
           <span class="section-count">({posts.length})</span>
         </h3>
         <ul class="listing">
-          {posts.map(post => (
-            <li>
-              <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
-              <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
-            </li>
-          ))}
+          {posts.map(post => {
+            const d = getEffectiveDate(post, 'updated');
+            return (
+              <li>
+                <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
+                <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+              </li>
+            );
+          })}
         </ul>
       </section>
     )}
@@ -78,14 +80,18 @@ function shortDate(d: Date) {
           <span class="section-count">({notes.length})</span>
         </h3>
         <ul class="listing note-listing">
-          {notes.map(note => (
-            <li>
-              <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
-                {stageLabel[note.data.stage]}
-              </span>
-              <a href={url(`/notes/${note.id}`)}>{note.data.title}</a>
-            </li>
-          ))}
+          {notes.map(note => {
+            const d = getEffectiveDate(note, 'updated');
+            return (
+              <li>
+                <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
+                  {stageLabel[note.data.stage]}
+                </span>
+                <a href={url(`/notes/${note.id}`)}>{note.data.title}</a>
+                <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+              </li>
+            );
+          })}
         </ul>
       </section>
     )}

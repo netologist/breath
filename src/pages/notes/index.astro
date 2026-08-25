@@ -3,6 +3,7 @@ import { getCollection, getEntry, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
 import { url, base } from '../../utils/url';
+import { formatYMD, getEffectiveDate, sortByDate } from '../../utils/date';
 const allNotes = await getCollection('notes');
 
 // Fetch and render the flagship garden entry note
@@ -20,11 +21,10 @@ const directoryNotes = allNotes
   .sort((a, b) => stageOrder[a.data.stage] - stageOrder[b.data.stage]);
 
 const byStage = {
-  evergreen: directoryNotes.filter(n => n.data.stage === 'evergreen'),
-  budding:   directoryNotes.filter(n => n.data.stage === 'budding'),
-  seedling:  directoryNotes.filter(n => n.data.stage === 'seedling'),
+  evergreen: sortByDate(directoryNotes.filter(n => n.data.stage === 'evergreen'), 'updated'),
+  budding:   sortByDate(directoryNotes.filter(n => n.data.stage === 'budding'), 'updated'),
+  seedling:  sortByDate(directoryNotes.filter(n => n.data.stage === 'seedling'), 'updated'),
 };
-
 const stageLabel = { evergreen: '🌲 Evergreen Notes', budding: '🌿 Budding Ideas', seedling: '🌱 Seedling Thoughts' };
 const stageCls   = { evergreen: 'stage-evergreen', budding: 'stage-budding', seedling: 'stage-seedling' };
 
@@ -117,24 +117,23 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
               <span class="stage-count">({byStage[stage].length})</span>
             </p>
             <ul class="listing note-listing">
-              {byStage[stage].map(note => (
-                <li class="note-list-item" data-title={note.data.title.toLowerCase()} data-tags={note.data.tags.join(' ').toLowerCase()} data-desc={(note.data.description ?? '').toLowerCase()}>
-                  <a href={url(`/notes/${note.id}`)} class="note-link" data-note-id={note.id}>
-                    <span class="note-bullet">·</span>
-                    <span class="note-title-text">{note.data.title}</span>
-                  </a>
-                  {note.data.description && (
-                    <span class="note-item-desc">{note.data.description}</span>
-                  )}
-                  {note.data.tags.length > 0 && (
-                    <span class="note-item-tags">
-                      {note.data.tags.map(t => (
-                        <span class="tag tag-mini">{t}</span>
-                      ))}
-                    </span>
-                  )}
-                </li>
-              ))}
+              {byStage[stage].map(note => {
+                const d = getEffectiveDate(note, 'updated');
+                return (
+                  <li class="note-list-item" data-title={note.data.title.toLowerCase()} data-tags={note.data.tags.join(' ').toLowerCase()} data-desc={(note.data.description ?? '').toLowerCase()}>
+                    <div class="note-item-main">
+                      <a href={url(`/notes/${note.id}`)} class="note-link" data-note-id={note.id}>
+                        <span class="note-bullet">·</span>
+                        <span class="note-title-text">{note.data.title}</span>
+                      </a>
+                      {note.data.description && (
+                        <span class="note-item-desc">{note.data.description}</span>
+                      )}
+                    </div>
+                    <time datetime={d.toISOString()} class="note-item-date">{formatYMD(d)}</time>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )
@@ -608,13 +607,21 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
   .note-list-item {
     display: flex;
     align-items: baseline;
-    gap: 8px;
-    padding: 4px 0;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
     border-bottom: 1px dotted var(--border);
-    flex-wrap: wrap;
   }
   .note-list-item:last-child {
     border-bottom: none;
+  }
+  .note-item-main {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
   }
   .note-link {
     font-family: var(--font-sans);
@@ -625,10 +632,30 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     display: inline-flex;
     align-items: baseline;
     gap: 4px;
+    flex-shrink: 0;
   }
   .note-link:hover {
     text-decoration: underline;
     color: var(--text-link-hover);
+  }
+  .note-bullet {
+    color: var(--text-muted);
+    font-weight: bold;
+    user-select: none;
+  }
+  .note-item-desc {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+  .note-item-date {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    text-align: right;
+    letter-spacing: 0.02em;
   }
   .note-bullet {
     color: var(--text-muted);

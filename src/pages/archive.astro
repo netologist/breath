@@ -3,48 +3,146 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { url } from '../utils/url';
-const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+import { formatYMD, getEffectiveDate, groupByYear } from '../utils/date';
 
-const byYear: Record<string, typeof allPosts> = {};
-for (const post of allPosts) {
-  const y = post.data.date.getFullYear().toString();
-  (byYear[y] ??= []).push(post);
-}
-const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 
-function longDate(d: Date) {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
+const { years: updatedYears, byYear: updatedByYear } = groupByYear(allPosts, 'updated');
+const { years: createdYears, byYear: createdByYear } = groupByYear(allPosts, 'created');
 ---
 
 <BaseLayout title="Archive" description="Chronological timeline of all published posts.">
   <Sidebar />
   <main class="site-content">
-    <h2 class="page-title">
-      archive
-      <span class="count">{allPosts.length}</span>
-    </h2>
-    <p class="page-desc">Complete chronological archive of all published posts.</p>
+    <div class="archive-header-bar">
+      <div>
+        <h2 class="page-title">
+          archive
+          <span class="count">{allPosts.length}</span>
+        </h2>
+        <p class="page-desc">Complete chronological timeline of all published posts.</p>
+      </div>
 
-    {years.map(year => (
-      <section>
-        <p class="year-heading">{year} <span class="ycount">({byYear[year].length})</span></p>
-        <ul class="listing">
-          {byYear[year].map(post => (
-            <li>
-              <time datetime={post.data.date.toISOString()}>{longDate(post.data.date)}</time>
-              <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    ))}
+      <div class="sort-switch">
+        <span class="sort-label">Sort:</span>
+        <button id="archive-sort-updated" class="sort-btn active" type="button" aria-pressed="true">Updated</button>
+        <button id="archive-sort-created" class="sort-btn" type="button" aria-pressed="false">Created</button>
+      </div>
+    </div>
+
+    <!-- Default: Grouped by Updated Date -->
+    <div id="archive-by-updated" class="archive-group-container">
+      {updatedYears.map(year => (
+        <section>
+          <p class="year-heading">{year} <span class="ycount">({updatedByYear[year].length})</span></p>
+          <ul class="listing">
+            {updatedByYear[year].map(post => {
+              const d = getEffectiveDate(post, 'updated');
+              return (
+                <li>
+                  <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
+                  <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+
+    <!-- Alternative: Grouped by Created Date -->
+    <div id="archive-by-created" class="archive-group-container" style="display: none;">
+      {createdYears.map(year => (
+        <section>
+          <p class="year-heading">{year} <span class="ycount">({createdByYear[year].length})</span></p>
+          <ul class="listing">
+            {createdByYear[year].map(post => {
+              const d = getEffectiveDate(post, 'created');
+              return (
+                <li>
+                  <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
+                  <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
   </main>
 </BaseLayout>
 
+<script>
+  function setupArchiveSort() {
+    const updatedBtn = document.getElementById('archive-sort-updated');
+    const createdBtn = document.getElementById('archive-sort-created');
+    const updatedContainer = document.getElementById('archive-by-updated');
+    const createdContainer = document.getElementById('archive-by-created');
+
+    updatedBtn?.addEventListener('click', () => {
+      updatedBtn.classList.add('active');
+      updatedBtn.setAttribute('aria-pressed', 'true');
+      createdBtn?.classList.remove('active');
+      createdBtn?.setAttribute('aria-pressed', 'false');
+      if (updatedContainer) updatedContainer.style.display = 'block';
+      if (createdContainer) createdContainer.style.display = 'none';
+    });
+
+    createdBtn?.addEventListener('click', () => {
+      createdBtn.classList.add('active');
+      createdBtn.setAttribute('aria-pressed', 'true');
+      updatedBtn?.classList.remove('active');
+      updatedBtn?.setAttribute('aria-pressed', 'false');
+      if (createdContainer) createdContainer.style.display = 'block';
+      if (updatedContainer) updatedContainer.style.display = 'none';
+    });
+  }
+
+  setupArchiveSort();
+  document.addEventListener('astro:page-load', setupArchiveSort);
+</script>
+
 <style>
+  .archive-header-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-lg);
+  }
   .page-title { margin-bottom: 0.35em; }
-  .ycount     { font-weight: 400; }
-  .listing time { min-width: 110px; }
+  .page-desc { margin-bottom: 0; }
+  .ycount { font-weight: 400; font-size: 0.85em; color: var(--text-muted); }
+
+  .sort-switch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .sort-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2px 8px;
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .sort-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+  .sort-btn.active {
+    background: var(--text-primary);
+    color: #fff;
+    border-color: var(--text-primary);
+    font-weight: 600;
+  }
 </style>

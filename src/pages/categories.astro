@@ -3,9 +3,9 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { url } from '../utils/url';
-const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+import { formatYMD, getEffectiveDate, sortByDate } from '../utils/date';
 
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 const allNotes = await getCollection('notes');
 
 interface CategoryGroup {
@@ -33,9 +33,7 @@ const categories = Object.keys(byCategory).sort((a, b) =>
 const stageLabel = { seedling: '🌱 Seedling', budding: '🌿 Budding', evergreen: '🌲 Evergreen' };
 const stageCls   = { seedling: 'stage-seedling', budding: 'stage-budding', evergreen: 'stage-evergreen' };
 
-function shortDate(d: Date) {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+
 ---
 
 <BaseLayout title="Categories" description="Index of all articles and evergreen notes organized by topic.">
@@ -66,12 +64,15 @@ function shortDate(d: Date) {
                 <span class="group-icon">📝</span> Articles ({group.posts.length})
               </h4>
               <ul class="listing">
-                {group.posts.map(post => (
-                  <li>
-                    <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
-                    <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
-                  </li>
-                ))}
+                {sortByDate(group.posts, 'updated').map(post => {
+                  const d = getEffectiveDate(post, 'updated');
+                  return (
+                    <li>
+                      <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
+                      <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -83,14 +84,18 @@ function shortDate(d: Date) {
                 <span class="group-icon">🌲</span> Notes ({group.notes.length})
               </h4>
               <ul class="listing note-group-listing">
-                {group.notes.map(note => (
-                  <li class="note-item-simple">
-                    <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
-                      {stageLabel[note.data.stage]}
-                    </span>
-                    <a href={url(`/notes/${note.id}`)}>{note.data.title}</a>
-                  </li>
-                ))}
+                {sortByDate(group.notes, 'updated').map(note => {
+                  const d = getEffectiveDate(note, 'updated');
+                  return (
+                    <li class="note-item-simple">
+                      <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
+                        {stageLabel[note.data.stage]}
+                      </span>
+                      <a href={url(`/notes/${note.id}`)} class="note-simple-link">{note.data.title}</a>
+                      <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -153,9 +158,33 @@ function shortDate(d: Date) {
   }
   .note-item-simple {
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    justify-content: space-between;
     gap: 8px;
-    padding: 3px 0;
+    padding: 4px 0;
+    border-bottom: 1px dotted var(--border);
+  }
+  .note-item-simple:last-child {
+    border-bottom: none;
+  }
+  .note-simple-link {
+    flex: 1;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .note-simple-link:hover {
+    color: var(--text-link);
+    text-decoration: underline;
+  }
+  .note-item-simple time {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    text-align: right;
   }
   .stage-badge-small {
     font-size: 0.72rem;

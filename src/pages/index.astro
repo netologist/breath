@@ -3,19 +3,10 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { url } from '../utils/url';
-const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+import { formatYMD, getEffectiveDate, groupByYear } from '../utils/date';
 
-const byYear: Record<string, typeof allPosts> = {};
-for (const post of allPosts) {
-  const y = post.data.date.getFullYear().toString();
-  (byYear[y] ??= []).push(post);
-}
-const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
-
-function shortDate(d: Date) {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+const { years, byYear } = groupByYear(allPosts, 'updated');
 ---
 
 <BaseLayout title="Breath" description="A minimalist digital garden and engineering blog.">
@@ -32,14 +23,17 @@ function shortDate(d: Date) {
       <section>
         <p class="year-heading">{year}</p>
         <ul class="listing">
-          {byYear[year].map(post => (
-            <li>
-              <time datetime={post.data.date.toISOString()}>
-                {shortDate(post.data.date)}
-              </time>
-              <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
-            </li>
-          ))}
+          {byYear[year].map(post => {
+            const effDate = getEffectiveDate(post, 'updated');
+            return (
+              <li>
+                <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
+                <time datetime={effDate.toISOString()}>
+                  {formatYMD(effDate)}
+                </time>
+              </li>
+            );
+          })}
         </ul>
       </section>
     ))}

@@ -3,24 +3,17 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
 import { url } from '../../utils/url';
-const allPosts = (await getCollection('blog', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+import { formatYMD, getEffectiveDate, groupByYear } from '../../utils/date';
 
-const byYear: Record<string, typeof allPosts> = {};
-for (const post of allPosts) {
-  const y = post.data.date.getFullYear().toString();
-  (byYear[y] ??= []).push(post);
-}
-const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+
+const { years: updatedYears, byYear: updatedByYear } = groupByYear(allPosts, 'updated');
+const { years: createdYears, byYear: createdByYear } = groupByYear(allPosts, 'created');
 
 // Tag cloud
 const tagCounts: Record<string, number> = {};
 allPosts.forEach(p => p.data.tags.forEach(t => { tagCounts[t] = (tagCounts[t] ?? 0) + 1; }));
 const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
-
-function shortDate(d: Date) {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 ---
 
 <BaseLayout title="Posts" description="Articles on software engineering, distributed systems, and design.">
@@ -30,40 +23,140 @@ function shortDate(d: Date) {
     <h2 class="page-title">posts <span class="count">{allPosts.length}</span></h2>
     <p class="page-desc">Essays, engineering guides, and deep technical notes.</p>
 
-    {tags.length > 0 && (
-      <div class="tag-cloud">
-        {tags.map(([tag, count]) => (
-          <a href={url(`/tags/${tag}`)} class="tag">
-            {tag} <span class="tag-count">({count})</span>
-          </a>
-        ))}
-      </div>
-    )}
-
-    {years.map(year => (
-      <section>
-        <p class="year-heading">{year}</p>
-        <ul class="listing">
-          {byYear[year].map(post => (
-            <li>
-              <time datetime={post.data.date.toISOString()}>{shortDate(post.data.date)}</time>
-              <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
-            </li>
+    <div class="posts-controls">
+      {tags.length > 0 && (
+        <div class="tag-cloud">
+          {tags.map(([tag, count]) => (
+            <a href={url(`/tags/${tag}`)} class="tag">
+              {tag} <span class="tag-count">({count})</span>
+            </a>
           ))}
-        </ul>
-      </section>
-    ))}
+        </div>
+      )}
+
+      <div class="sort-switch">
+        <span class="sort-label">Sort:</span>
+        <button id="sort-by-updated" class="sort-btn active" type="button" aria-pressed="true">Updated</button>
+        <button id="sort-by-created" class="sort-btn" type="button" aria-pressed="false">Created</button>
+      </div>
+    </div>
+
+    <!-- Default: Grouped by Updated Date -->
+    <div id="posts-by-updated" class="posts-group-container">
+      {updatedYears.map(year => (
+        <section>
+          <p class="year-heading">{year}</p>
+          <ul class="listing">
+            {updatedByYear[year].map(post => {
+              const d = getEffectiveDate(post, 'updated');
+              return (
+                <li>
+                  <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
+                  <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+
+    <!-- Alternative: Grouped by Created Date -->
+    <div id="posts-by-created" class="posts-group-container" style="display: none;">
+      {createdYears.map(year => (
+        <section>
+          <p class="year-heading">{year}</p>
+          <ul class="listing">
+            {createdByYear[year].map(post => {
+              const d = getEffectiveDate(post, 'created');
+              return (
+                <li>
+                  <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
+                  <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
   </main>
 </BaseLayout>
+
+<script>
+  function setupSortToggle() {
+    const updatedBtn = document.getElementById('sort-by-updated');
+    const createdBtn = document.getElementById('sort-by-created');
+    const updatedContainer = document.getElementById('posts-by-updated');
+    const createdContainer = document.getElementById('posts-by-created');
+
+    updatedBtn?.addEventListener('click', () => {
+      updatedBtn.classList.add('active');
+      updatedBtn.setAttribute('aria-pressed', 'true');
+      createdBtn?.classList.remove('active');
+      createdBtn?.setAttribute('aria-pressed', 'false');
+      if (updatedContainer) updatedContainer.style.display = 'block';
+      if (createdContainer) createdContainer.style.display = 'none';
+    });
+
+    createdBtn?.addEventListener('click', () => {
+      createdBtn.classList.add('active');
+      createdBtn.setAttribute('aria-pressed', 'true');
+      updatedBtn?.classList.remove('active');
+      updatedBtn?.setAttribute('aria-pressed', 'false');
+      if (createdContainer) createdContainer.style.display = 'block';
+      if (updatedContainer) updatedContainer.style.display = 'none';
+    });
+  }
+
+  setupSortToggle();
+  document.addEventListener('astro:page-load', setupSortToggle);
+</script>
 
 <style>
   .page-title {
     margin-bottom: 0.35em;
   }
+  .posts-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-xl);
+  }
   .tag-cloud {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35em;
-    margin-bottom: var(--space-xl);
+  }
+  .sort-switch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+  .sort-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2px 8px;
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .sort-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+  .sort-btn.active {
+    background: var(--text-primary);
+    color: #fff;
+    border-color: var(--text-primary);
+    font-weight: 600;
   }
 </style>
