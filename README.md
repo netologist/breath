@@ -14,14 +14,16 @@ It blends long-form structured essays with an associative knowledge garden where
 
 - **🌱 Digital Garden Architecture:** Classify notes by growth maturity (`🌱 Seedling` → `🌿 Budding` → `🌲 Evergreen`).
 - **🔗 Bi-directional Wikilinks:** Connect notes using intuitive `[[note-slug]]` or `[[note-slug|Custom Label]]` syntax.
-- **📑 Stacked Note Drawer Previews:** Click any internal note link to preview it in an Andy Matuschak-style slide-over panel without losing reading context.
+- **📚 Andy Matuschak-style Stacked Notes:** Click any internal note link to re-root into it — the previous notes slide left as narrow columns that you can collapse like an accordion (`‹`), close from the middle (`✕`), and reopen via the browser Back button. Deep links via `?stackedNotes=...`.
+- **🔗 External Link Previews:** Click any external link to see an OpenGraph metadata card (title, description, hostname) without leaving the note.
 - **📖 Interactive Table of Contents:** Maggie Appleton-style sticky TOC on desktop with active scrollspy highlight, transforming into a smooth full-screen drawer on mobile.
 - **🔍 Instant Client-side Search:** Fast, zero-dependency search across titles, descriptions, and tags.
-- **📱 100% Mobile Responsive:** Optimized top bar and off-canvas drawers for both navigation and table of contents.
+- **📱 100% Mobile Responsive:** Optimized top bar and off-canvas drawers for both navigation and table of contents (stacking is disabled on mobile).
 - **⚡ Zero JS Framework Overhead:** 100% pure Astro and vanilla TypeScript for maximum performance and lightweight assets.
 - **✒️ Distinctive Typography:** Powered by *Yanone Kaffeesatz* for headers/body and *JetBrains Mono* for code blocks.
 - **🚀 One-click GitHub Pages Deployment:** Built-in GitHub Actions workflow ready for instant deployment.
 - **📡 Built-in RSS Feed:** Auto-generated `/rss.xml` for all blog posts.
+- **📐 Architecture Decision Records:** See [`docs/decisions/`](docs/decisions/) for the rationale behind major design choices (stacked notes, external link previews, and more).
 
 ---
 
