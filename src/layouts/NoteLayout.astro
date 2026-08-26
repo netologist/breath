@@ -41,261 +41,567 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
 <BaseLayout title={title} description={description}>
   <Sidebar hasToc={tocHeadings.length > 0} />
 
-  {tocHeadings.length > 0 && (
-    <div id="toc-backdrop" class="toc-backdrop" aria-hidden="true"></div>
-  )}
+  <!-- ═══ STACKED NOTES OUTER ═══ -->
+  <div class="notes-stack-outer" id="notes-stack-outer">
+    <div class="notes-stack" id="notes-stack">
 
-  <main class="site-content note-layout-main">
-    <div class="note-grid">
-      <article class="note-article">
-        <header class="note-header">
-          <h1 class="note-title">{title}</h1>
-          {description && <p class="note-desc">{description}</p>}
+      <!-- ─── ROOT COLUMN ─── -->
+      <div class="note-column root-column" id="root-column">
 
-          <div class="note-meta">
-            <span class={`stage-badge ${stageCls[stage]}`}>{stageLabel[stage]}</span>
-            {created && (
-              <span class="meta-item">
-                <span class="meta-sep">·</span>
-                <span>created: <time datetime={created.toISOString()}>{fmt(created)}</time></span>
-              </span>
-            )}
-            {updated && (
-              <span class="meta-item">
-                <span class="meta-sep">·</span>
-                <span>updated: <time datetime={updated.toISOString()}>{fmt(updated)}</time></span>
-              </span>
-            )}
-            {category && (
-              <span class="meta-item">
-                <span class="meta-sep">·</span>
-                <span class="meta-label">category:</span>
-                <a href={url(`/categories/${category}`)} class="note-category">{category}</a>
-              </span>
-            )}
-          </div>
+        <!-- Collapse strip (click to collapse/expand) -->
+        <button class="col-collapse-btn" id="root-collapse-btn"
+          aria-label="Collapse column" title="Collapse this note">
+          <span class="collapse-chevron">‹</span>
+          <span class="collapse-label-text">{title}</span>
+        </button>
 
-          {tags.length > 0 && (
-            <div class="note-tags">
-              <span class="tags-label">tags:</span>
-              {tags.map(tag => (
-                <a href={url(`/tags/${tag}`)} class="tag">{tag}</a>
-              ))}
-            </div>
+        <!-- Inner scroll body of root column -->
+        <div class="col-body" id="root-body">
+
+          {tocHeadings.length > 0 && (
+            <div id="toc-backdrop" class="toc-backdrop" aria-hidden="true"></div>
           )}
-        </header>
 
-        <hr class="divider" />
+          <div class="note-grid">
+            <article class="note-article">
+              <header class="note-header">
+                <h1 class="note-title">{title}</h1>
+                {description && <p class="note-desc">{description}</p>}
 
-        <div class="prose">
-          <slot />
-        </div>
+                <div class="note-meta">
+                  <span class={`stage-badge ${stageCls[stage]}`}>{stageLabel[stage]}</span>
+                  {created && (
+                    <span class="meta-item">
+                      <span class="meta-sep">·</span>
+                      <span>created: <time datetime={created.toISOString()}>{fmt(created)}</time></span>
+                    </span>
+                  )}
+                  {updated && (
+                    <span class="meta-item">
+                      <span class="meta-sep">·</span>
+                      <span>updated: <time datetime={updated.toISOString()}>{fmt(updated)}</time></span>
+                    </span>
+                  )}
+                  {category && (
+                    <span class="meta-item">
+                      <span class="meta-sep">·</span>
+                      <span class="meta-label">category:</span>
+                      <a href={url(`/categories/${category}`)} class="note-category">{category}</a>
+                    </span>
+                  )}
+                </div>
 
-        <footer class="note-footer">
-          <p>This note is part of the <a href={url('/notes')}>Digital Garden</a> — a collection of connected, evolving thoughts.</p>
-        </footer>
+                {tags.length > 0 && (
+                  <div class="note-tags">
+                    <span class="tags-label">tags:</span>
+                    {tags.map(tag => (
+                      <a href={url(`/tags/${tag}`)} class="tag">{tag}</a>
+                    ))}
+                  </div>
+                )}
+              </header>
 
-        {backlinks.length > 0 && (
-          <section class="backlinks">
-            <p class="backlinks-title">Backlinks ({backlinks.length})</p>
-            <ul class="backlinks-list">
-              {backlinks.map(b => (
-                <li>
-                  <a href={b.url ?? url(`/notes/${b.id}`)} class="backlink-item">
-                    <span class="backlink-icon">{b.type === 'blog' ? '📝' : '🌲'}</span>
-                    <span class="backlink-title">{b.title}</span>
-                    {b.type === 'blog' && <span class="backlink-badge">post</span>}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-      </article>
+              <hr class="divider" />
 
-      <!-- Maggie Appleton Style Sticky Table of Contents Sidebar -->
-      {tocHeadings.length > 0 && (
-        <aside class="toc-sidebar" id="toc-sidebar" aria-label="Table of Contents">
-          <div class="toc-card" id="toc-card">
-            <div class="toc-card-header" id="toc-header-toggle">
-              <div class="toc-title-group">
-                <svg class="toc-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="8" y1="6" x2="21" y2="6"></line>
-                  <line x1="8" y1="12" x2="21" y2="12"></line>
-                  <line x1="8" y1="18" x2="21" y2="18"></line>
-                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-                <span class="toc-title">Contents</span>
-                <span class="toc-count-badge">{tocHeadings.length}</span>
+              <div class="prose">
+                <slot />
               </div>
-              <button id="toc-toggle-btn" class="toc-toggle-btn desktop-only" type="button" aria-expanded="true" aria-controls="toc-nav" aria-label="Toggle table of contents">
-                <span id="toc-toggle-label">Hide</span>
-                <svg id="toc-chevron" class="toc-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="18 15 12 9 6 15"></polyline>
-                </svg>
-              </button>
-              <button id="toc-drawer-close-btn" class="toc-drawer-close-btn mobile-only" type="button" aria-label="Close table of contents">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <nav id="toc-nav" class="toc-card-body">
-              <ul class="toc-list">
-                {tocHeadings.map(h => (
-                  <li class:list={[`toc-item`, `toc-h${h.depth}`]}>
-                    <a href={`#${h.slug}`} class="toc-link" data-slug={h.slug}>
-                      <span class="toc-bullet">·</span>
-                      <span class="toc-text">{h.text}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
-        </aside>
-      )}
-    </div>
-  </main>
 
-  <!-- Andy Matuschak Style Stacked Note Drawer for linked notes -->
-  <div id="note-drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
-  <aside id="note-drawer" class="note-drawer" aria-label="Note Preview Panel" aria-hidden="true">
-    <div class="drawer-header">
-      <div class="drawer-controls">
-        <span class="drawer-badge">Evergreen Note</span>
-        <a id="drawer-full-link" href="#" class="drawer-full-btn" title="Open full note">↗ Open Full Note</a>
+              <footer class="note-footer">
+                <p>This note is part of the <a href={url('/notes')}>Digital Garden</a> — a collection of connected, evolving thoughts.</p>
+              </footer>
+
+              {backlinks.length > 0 && (
+                <section class="backlinks">
+                  <p class="backlinks-title">Backlinks ({backlinks.length})</p>
+                  <ul class="backlinks-list">
+                    {backlinks.map(b => (
+                      <li>
+                        <a href={b.url ?? url(`/notes/${b.id}`)} class="backlink-item">
+                          <span class="backlink-icon">{b.type === 'blog' ? '📝' : '🌲'}</span>
+                          <span class="backlink-title">{b.title}</span>
+                          {b.type === 'blog' && <span class="backlink-badge">post</span>}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </article>
+
+            <!-- Desktop sticky TOC (inside root column) -->
+            {tocHeadings.length > 0 && (
+              <aside class="toc-sidebar" id="toc-sidebar" aria-label="Table of Contents">
+                <div class="toc-card" id="toc-card">
+                  <div class="toc-card-header" id="toc-header-toggle">
+                    <div class="toc-title-group">
+                      <svg class="toc-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                      </svg>
+                      <span class="toc-title">Contents</span>
+                      <span class="toc-count-badge">{tocHeadings.length}</span>
+                    </div>
+                    <button id="toc-toggle-btn" class="toc-toggle-btn desktop-only" type="button" aria-expanded="true" aria-controls="toc-nav" aria-label="Toggle table of contents">
+                      <span id="toc-toggle-label">Hide</span>
+                      <svg id="toc-chevron" class="toc-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    </button>
+                    <button id="toc-drawer-close-btn" class="toc-drawer-close-btn mobile-only" type="button" aria-label="Close table of contents">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <nav id="toc-nav" class="toc-card-body">
+                    <ul class="toc-list">
+                      {tocHeadings.map(h => (
+                        <li class:list={[`toc-item`, `toc-h${h.depth}`]}>
+                          <a href={`#${h.slug}`} class="toc-link" data-slug={h.slug}>
+                            <span class="toc-bullet">·</span>
+                            <span class="toc-text">{h.text}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+                </div>
+              </aside>
+            )}
+          </div><!-- /note-grid -->
+        </div><!-- /col-body -->
+      </div><!-- /root-column -->
+
+      <!-- ─── STACKED COLUMNS INJECT HERE ─── -->
+      <div id="stacked-columns"></div>
+
+    </div><!-- /notes-stack -->
+  </div><!-- /notes-stack-outer -->
+
+  <!-- ═══ EXTERNAL LINK PANEL ═══ -->
+  <div id="ext-panel" class="ext-panel" aria-hidden="true" aria-label="External site preview">
+    <div class="ext-panel-header">
+      <div class="ext-panel-meta">
+        <span class="ext-panel-icon">↗</span>
+        <span class="ext-panel-hostname" id="ext-panel-hostname"></span>
       </div>
-      <button id="drawer-close-btn" class="drawer-close-btn" aria-label="Close preview">✕</button>
+      <div class="ext-panel-actions">
+        <a id="ext-newtab-btn" href="#" target="_blank" rel="noopener noreferrer" class="ext-newtab-btn">
+          Open in New Tab
+        </a>
+        <button id="ext-panel-close" class="ext-panel-close" aria-label="Close preview">✕</button>
+      </div>
     </div>
-    <div id="drawer-body" class="drawer-body"></div>
-  </aside>
+    <div class="ext-panel-url-bar" id="ext-panel-url-bar"></div>
+    <div class="ext-panel-body">
+      <iframe id="ext-iframe" class="ext-iframe" src=""
+        title="External page preview"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups">
+      </iframe>
+      <div id="ext-blocked" class="ext-blocked">
+        <div class="ext-blocked-icon">🔒</div>
+        <p class="ext-blocked-title">Preview unavailable</p>
+        <p class="ext-blocked-desc">This site blocks embedding (X-Frame-Options).</p>
+        <a id="ext-blocked-link" href="#" target="_blank" rel="noopener noreferrer" class="ext-open-btn">
+          Open in New Tab ↗
+        </a>
+      </div>
+    </div>
+  </div>
+
 </BaseLayout>
 
+<!-- ════════════════════════════════════════════════════════
+     STACKED NOTES ENGINE
+     ════════════════════════════════════════════════════════ -->
 <script>
-  // ── Stacked Note Drawer (for internal note link previews) ──
-  const drawer = document.getElementById('note-drawer');
-  const backdrop = document.getElementById('note-drawer-backdrop');
-  const drawerBody = document.getElementById('drawer-body');
-  const drawerCloseBtn = document.getElementById('drawer-close-btn');
-  const drawerFullLink = document.getElementById('drawer-full-link') as HTMLAnchorElement | null;
+(function () {
+  // ── Base path detection ──
+  const BASE = (window.location.pathname.startsWith('/breath')) ? '/breath' : '';
 
-  const noteCache = new Map<string, string>();
+  // ── Root note ID from URL ──
+  const pathParts = window.location.pathname.replace(/\/$/, '').split('/');
+  const ROOT_ID = pathParts[pathParts.length - 1];
 
-  async function loadNoteIntoDrawer(url: string) {
-    if (!drawer || !drawerBody) return;
+  // ── State ──
+  let stack: string[] = []; // IDs of stacked (non-root) columns
+  const cache = new Map<string, string>(); // id → article innerHTML
 
-    drawer.classList.add('open');
-    backdrop?.classList.add('open');
-    drawer.setAttribute('aria-hidden', 'false');
-    backdrop?.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('drawer-open');
+  // ── DOM refs ──
+  const outer     = document.getElementById('notes-stack-outer')!;
+  const stacksEl  = document.getElementById('stacked-columns')!;
+  const rootCol   = document.getElementById('root-column')!;
 
-    if (drawerFullLink) {
-      drawerFullLink.href = url;
+  // ─── Body lock for stacked mode ───
+  document.body.classList.add('notes-stacked');
+
+  // ════════════════════════════════
+  // URL State
+  // ════════════════════════════════
+  function readURLStack(): string[] {
+    return new URLSearchParams(window.location.search).getAll('stackedNotes');
+  }
+
+  function syncURL(newStack: string[]) {
+    const p = new URLSearchParams();
+    newStack.forEach(id => p.append('stackedNotes', id));
+    const qs = p.toString() ? '?' + p.toString() : '';
+    history.pushState({ stack: newStack }, '', window.location.pathname + qs);
+  }
+
+  // ════════════════════════════════
+  // Fetch note HTML
+  // ════════════════════════════════
+  async function fetchNote(id: string): Promise<string | null> {
+    if (cache.has(id)) return cache.get(id)!;
+    try {
+      const res = await fetch(`${BASE}/notes/${id}/`);
+      if (!res.ok) return null;
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const article = doc.querySelector('article.note-article');
+      if (!article) return null;
+      // Rewrite relative hrefs to absolute
+      article.querySelectorAll('a[href]').forEach(a => {
+        const href = a.getAttribute('href') || '';
+        if (href.startsWith('/') && !href.startsWith('//')) {
+          // already absolute path – keep as-is; BASE already in href from build
+        }
+      });
+      const html = article.innerHTML;
+      cache.set(id, html);
+      return html;
+    } catch {
+      return null;
     }
+  }
 
-    drawerBody.innerHTML = `
-      <div class="drawer-loading">
-        <div class="drawer-spinner"></div>
-        <p>Loading note...</p>
+  // ════════════════════════════════
+  // Column factory
+  // ════════════════════════════════
+  function buildColumn(id: string, html: string): HTMLElement {
+    const col = document.createElement('div');
+    col.className = 'note-column stacked-column';
+    col.dataset.noteId = id;
+
+    col.innerHTML = `
+      <button class="col-collapse-btn stacked-collapse-btn" aria-label="Collapse" title="Collapse">
+        <span class="collapse-chevron">‹</span>
+        <span class="collapse-label-text"></span>
+      </button>
+      <div class="col-body">
+        <div class="stacked-topbar">
+          <span class="stacked-note-title"></span>
+          <div class="stacked-topbar-actions">
+            <a class="stacked-open-full" href="${BASE}/notes/${id}/" title="Open full page">↗</a>
+            <button class="stacked-close-btn" aria-label="Close" title="Close">✕</button>
+          </div>
+        </div>
+        <article class="note-article">${html}</article>
+      </div>
+      <div class="col-collapsed-strip">
+        <span class="col-collapsed-title"></span>
       </div>
     `;
 
-    try {
-      let contentHtml = noteCache.get(url);
-      if (!contentHtml) {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Could not load note');
-        const text = await res.text();
-        const doc = new DOMParser().parseFromString(text, 'text/html');
-        const article = doc.querySelector('article.note-article') || doc.querySelector('article');
-        if (!article) throw new Error('Note content not found');
-        contentHtml = article.innerHTML;
-        noteCache.set(url, contentHtml);
-      }
+    // Extract title
+    const titleEl = col.querySelector('.note-article .note-title') || col.querySelector('.note-article h1');
+    const noteTitle = titleEl?.textContent?.trim() || id;
+    const titleBar  = col.querySelector('.stacked-note-title') as HTMLElement;
+    const labelText = col.querySelector('.collapse-label-text') as HTMLElement;
+    const stripTitle = col.querySelector('.col-collapsed-title') as HTMLElement;
+    if (titleBar)  titleBar.textContent  = noteTitle;
+    if (labelText) labelText.textContent = noteTitle;
+    if (stripTitle) stripTitle.textContent = noteTitle;
 
-      drawerBody.innerHTML = contentHtml;
-      attachDrawerInternalLinks();
-      drawerBody.scrollTop = 0;
-    } catch (e) {
-      drawerBody.innerHTML = `
-        <div class="drawer-error">
-          <p>Could not load note preview.</p>
-          <a href="${url}" class="drawer-retry-btn">Open Full Note</a>
-        </div>
-      `;
+    // Collapse button
+    col.querySelector('.stacked-collapse-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleColCollapse(col);
+    });
+
+    // Close button
+    col.querySelector('.stacked-close-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeColumn(id);
+    });
+
+    // Clicking collapsed strip expands
+    const strip = col.querySelector('.col-collapsed-strip');
+    strip?.addEventListener('click', () => {
+      if (col.classList.contains('collapsed')) expandCol(col);
+    });
+
+    return col;
+  }
+
+  // ════════════════════════════════
+  // Push / Remove columns
+  // ════════════════════════════════
+  async function pushColumn(id: string, skipURL = false) {
+    // Already in stack? Scroll + flash
+    const existing = stacksEl.querySelector<HTMLElement>(`.stacked-column[data-note-id="${id}"]`);
+    if (existing) {
+      if (existing.classList.contains('collapsed')) expandCol(existing);
+      scrollToCol(existing);
+      existing.classList.add('flash');
+      setTimeout(() => existing.classList.remove('flash'), 700);
+      return;
     }
-  }
-
-  function closeDrawer() {
-    if (!drawer) return;
-    drawer.classList.remove('open');
-    backdrop?.classList.remove('open');
-    drawer.setAttribute('aria-hidden', 'true');
-    backdrop?.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('drawer-open');
-  }
-
-  function handleLinkClick(e: MouseEvent) {
-    const target = (e.target as HTMLElement).closest('a');
-    if (!target) return;
-
-    // If the clicked link is the "Open in Full Page" button, allow default browser navigation
-    if (target.id === 'drawer-full-link' || target.classList.contains('drawer-full-btn') || target.classList.contains('drawer-retry-btn')) {
+    // Same as root?
+    if (id === ROOT_ID) {
+      scrollToCol(rootCol);
       return;
     }
 
-    const href = target.getAttribute('href');
-    if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
+    if (!skipURL) {
+      stack.push(id);
+      syncURL(stack);
+    }
 
-    const match = href.match(/(?:\/breath)?\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
-    if (match) {
-      if (window.location.pathname === href || window.location.pathname === `${href}/`) {
-        return;
-      }
+    // Loading placeholder
+    const placeholder = document.createElement('div');
+    placeholder.className = 'note-column stacked-column loading-col';
+    placeholder.dataset.noteId = id;
+    placeholder.innerHTML = `
+      <div class="col-body" style="display:flex;align-items:center;justify-content:center;height:100%">
+        <div class="col-spinner"></div>
+      </div>`;
+    stacksEl.appendChild(placeholder);
+    scrollToEnd();
 
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const html = await fetchNote(id);
+    placeholder.remove();
 
-      e.preventDefault();
-      loadNoteIntoDrawer(href);
+    // Check still needed
+    if (!stack.includes(id)) return;
+
+    if (html == null) {
+      const errCol = document.createElement('div');
+      errCol.className = 'note-column stacked-column error-col';
+      errCol.dataset.noteId = id;
+      errCol.innerHTML = `
+        <div class="col-body" style="padding:32px 24px">
+          <p style="color:var(--text-secondary);margin-bottom:12px">Couldn't load note.</p>
+          <a href="${BASE}/notes/${id}/" style="color:var(--text-link)">Open full note →</a>
+          <button class="stacked-close-btn" style="margin-top:16px;display:block" aria-label="Close">Close ✕</button>
+        </div>`;
+      errCol.querySelector('.stacked-close-btn')?.addEventListener('click', () => removeColumn(id));
+      stacksEl.appendChild(errCol);
+    } else {
+      const col = buildColumn(id, html);
+      stacksEl.appendChild(col);
+      // Animate in
+      requestAnimationFrame(() => {
+        col.classList.add('col-entering');
+        setTimeout(() => col.classList.remove('col-entering'), 350);
+        scrollToCol(col);
+      });
     }
   }
-  function attachDrawerInternalLinks() {
-    if (!drawerBody) return;
-    const links = drawerBody.querySelectorAll('a');
-    links.forEach(link => {
-      link.addEventListener('click', handleLinkClick as EventListener);
-    });
+
+  function removeColumn(id: string) {
+    const col = stacksEl.querySelector<HTMLElement>(`[data-note-id="${id}"]`);
+    if (col) {
+      col.classList.add('col-leaving');
+      setTimeout(() => col.remove(), 280);
+    }
+    stack = stack.filter(s => s !== id);
+    syncURL(stack);
   }
 
-  document.addEventListener('click', handleLinkClick as EventListener);
-  drawerCloseBtn?.addEventListener('click', closeDrawer);
-  backdrop?.addEventListener('click', closeDrawer);
+  // ════════════════════════════════
+  // Collapse / Expand
+  // ════════════════════════════════
+  function collapseCol(col: HTMLElement) {
+    col.classList.add('collapsed');
+    const btn = col.querySelector('.col-collapse-btn');
+    btn?.setAttribute('aria-label', 'Expand');
+    btn?.setAttribute('title', 'Expand');
+  }
 
-  // ── Maggie Appleton Style Sticky TOC ──
-  const tocCard = document.getElementById('toc-card');
-  const tocSidebar = document.getElementById('toc-sidebar');
-  const tocBackdrop = document.getElementById('toc-backdrop');
-  const tocToggleBtn = document.getElementById('toc-toggle-btn');
-  const tocHeaderToggle = document.getElementById('toc-header-toggle');
-  const tocToggleLabel = document.getElementById('toc-toggle-label');
-  const tocDrawerCloseBtn = document.getElementById('toc-drawer-close-btn');
-  const mobileTocBtn = document.getElementById('mobile-toc-btn');
-  const tocLinks = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
+  function expandCol(col: HTMLElement) {
+    col.classList.remove('collapsed');
+    const btn = col.querySelector('.col-collapse-btn');
+    btn?.setAttribute('aria-label', 'Collapse');
+    btn?.setAttribute('title', 'Collapse');
+    setTimeout(() => scrollToCol(col), 50);
+  }
+
+  function toggleColCollapse(col: HTMLElement) {
+    if (col.classList.contains('collapsed')) {
+      expandCol(col);
+    } else {
+      collapseCol(col);
+    }
+  }
+
+  // Root collapse
+  const rootCollapseBtn = document.getElementById('root-collapse-btn');
+  rootCollapseBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleColCollapse(rootCol);
+  });
+  rootCol.addEventListener('click', () => {
+    if (rootCol.classList.contains('collapsed')) expandCol(rootCol);
+  });
+
+  // ════════════════════════════════
+  // Scroll helpers
+  // ════════════════════════════════
+  function scrollToEnd() {
+    outer.scrollTo({ left: outer.scrollWidth, behavior: 'smooth' });
+  }
+
+  function scrollToCol(col: HTMLElement) {
+    const outerRect = outer.getBoundingClientRect();
+    const colRect = col.getBoundingClientRect();
+    const scrollLeft = outer.scrollLeft + colRect.left - outerRect.left;
+    outer.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+  }
+
+  // ════════════════════════════════
+  // Link wiring
+  // ════════════════════════════════
+   function onLinkClick(e: MouseEvent) {
+     if (window.innerWidth <= 768) return; // mobile: normal navigation
+     const a = (e.target as HTMLElement).closest('a');
+     if (!a) return;
+     const href = a.getAttribute('href') || '';
+     if (!href || href.startsWith('#') || href.startsWith('mailto:')) return;
+     if (a.classList.contains('stacked-open-full')) return; // explicit full-page link
+    if (a.id === 'ext-newtab-btn' || a.id === 'ext-blocked-link') return; // external panel buttons
+
+     // External link
+     if (/^https?:\/\//.test(href)) {
+       e.preventDefault();
+       openExtPanel(href);
+       return;
+     }
+
+     // Internal note link
+     const m = href.match(/(?:\/breath)?\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
+     if (m) {
+       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+       e.preventDefault();
+       pushColumn(m[1]);
+     }
+   }
+
+  // Delegated document-level click listener for all links
+  document.addEventListener('click', onLinkClick as EventListener);
+  // Popstate (browser back/forward)
+  // ════════════════════════════════
+  window.addEventListener('popstate', async (ev) => {
+    const newStack: string[] = (ev.state?.stack) ?? readURLStack();
+    // Clear current
+    stacksEl.innerHTML = '';
+    stack = [];
+    for (const id of newStack) {
+      stack.push(id);
+      await pushColumn(id, true);
+    }
+  });
+
+  // ════════════════════════════════
+  // Boot from URL
+  // ════════════════════════════════
+  (async () => {
+    const init = readURLStack();
+    for (const id of init) {
+      stack.push(id);
+      await pushColumn(id, true);
+    }
+  })();
+
+  // ════════════════════════════════
+  // External Link Panel
+  // ════════════════════════════════
+  const extPanel    = document.getElementById('ext-panel')!;
+  const extIframe   = document.getElementById('ext-iframe') as HTMLIFrameElement;
+  const extHostname = document.getElementById('ext-panel-hostname')!;
+  const extUrlBar   = document.getElementById('ext-panel-url-bar')!;
+  const extNewtab   = document.getElementById('ext-newtab-btn') as HTMLAnchorElement;
+  const extBlocked  = document.getElementById('ext-blocked')!;
+  const extBlockedLink = document.getElementById('ext-blocked-link') as HTMLAnchorElement;
+  const extClose    = document.getElementById('ext-panel-close')!;
+
+  function openExtPanel(href: string) {
+    try {
+      const u = new URL(href);
+      extHostname.textContent = u.hostname;
+      extUrlBar.textContent   = href.length > 72 ? href.slice(0, 72) + '…' : href;
+    } catch {
+      extHostname.textContent = href;
+      extUrlBar.textContent   = href;
+    }
+    extNewtab.href = href;
+    extBlockedLink.href = href;
+    extBlocked.style.display = 'none';
+    extIframe.style.display  = 'block';
+    extPanel.setAttribute('aria-hidden', 'false');
+    extPanel.classList.add('open');
+
+    extIframe.src = '';
+    // Reset handlers
+    const freshIframe = extIframe.cloneNode(false) as HTMLIFrameElement;
+    extIframe.parentNode?.replaceChild(freshIframe, extIframe);
+
+    freshIframe.onload = () => {
+      try {
+        const doc = freshIframe.contentDocument;
+        if (!doc || doc.readyState === 'complete' && doc.body?.innerHTML === '') {
+          showBlocked();
+        }
+      } catch {
+        // Cross-origin access denied = loaded fine, site allows iframes
+      }
+    };
+    freshIframe.onerror = () => showBlocked();
+
+    // Heuristic: set src with a timeout to catch synchronous X-Frame-Options refusals
+    setTimeout(() => { freshIframe.src = href; }, 30);
+  }
+
+  function showBlocked() {
+    const iframe = document.getElementById('ext-iframe') as HTMLIFrameElement | null;
+    if (iframe) iframe.style.display = 'none';
+    extBlocked.style.display = 'flex';
+  }
+
+  function closeExtPanel() {
+    extPanel.classList.remove('open');
+    extPanel.setAttribute('aria-hidden', 'true');
+    const iframe = document.getElementById('ext-iframe') as HTMLIFrameElement | null;
+    if (iframe) { iframe.src = ''; iframe.style.display = 'block'; }
+    extBlocked.style.display = 'none';
+  }
+
+  extClose.addEventListener('click', closeExtPanel);
+
+  // ════════════════════════════════
+  // TOC (desktop sticky + mobile drawer)
+  // ════════════════════════════════
+  const tocCard        = document.getElementById('toc-card');
+  const tocSidebar     = document.getElementById('toc-sidebar');
+  const tocBackdrop    = document.getElementById('toc-backdrop');
+  const tocToggleBtn   = document.getElementById('toc-toggle-btn');
+  const tocHeaderTog   = document.getElementById('toc-header-toggle');
+  const tocToggleLbl   = document.getElementById('toc-toggle-label');
+  const tocDrawerClose = document.getElementById('toc-drawer-close-btn');
+  const mobileTocBtn   = document.getElementById('mobile-toc-btn');
+  const tocLinks       = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
 
   function toggleDesktopToc() {
     if (!tocCard) return;
-    const isCollapsed = tocCard.classList.toggle('collapsed');
-    if (tocToggleBtn) {
-      tocToggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-    }
-    if (tocToggleLabel) {
-      tocToggleLabel.textContent = isCollapsed ? 'Show' : 'Hide';
-    }
+    const c = tocCard.classList.toggle('collapsed');
+    tocToggleBtn?.setAttribute('aria-expanded', c ? 'false' : 'true');
+    if (tocToggleLbl) tocToggleLbl.textContent = c ? 'Show' : 'Hide';
   }
   function openMobileToc() {
     tocSidebar?.classList.add('open');
@@ -305,7 +611,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     mobileTocBtn?.setAttribute('aria-expanded', 'true');
     document.body.classList.add('toc-open');
   }
-
   function closeMobileToc() {
     tocSidebar?.classList.remove('open');
     tocBackdrop?.classList.remove('open');
@@ -315,104 +620,320 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     document.body.classList.remove('toc-open');
   }
 
-  tocToggleBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleDesktopToc();
-  });
-
-  tocHeaderToggle?.addEventListener('click', () => {
-    if (window.innerWidth > 768) {
-      toggleDesktopToc();
-    }
-  });
-
+  tocToggleBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleDesktopToc(); });
+  tocHeaderTog?.addEventListener('click', () => { if (window.innerWidth > 768) toggleDesktopToc(); });
   mobileTocBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (tocSidebar?.classList.contains('open')) {
-      closeMobileToc();
-    } else {
-      openMobileToc();
-    }
+    tocSidebar?.classList.contains('open') ? closeMobileToc() : openMobileToc();
   });
+  tocDrawerClose?.addEventListener('click', (e) => { e.stopPropagation(); closeMobileToc(); });
+  tocBackdrop?.addEventListener('click', closeMobileToc);
+  tocLinks.forEach(l => l.addEventListener('click', () => { if (window.innerWidth <= 768) closeMobileToc(); }));
 
-  tocDrawerCloseBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeMobileToc();
-  });
-
-  tocBackdrop?.addEventListener('click', () => {
-    closeMobileToc();
-  });
-
-  tocLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        closeMobileToc();
-      }
-    });
-  });
-
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      if (drawer?.classList.contains('open')) {
-        closeDrawer();
-      } else if (tocSidebar?.classList.contains('open')) {
-        closeMobileToc();
-      }
-    }
-  });
-
-  // Scrollspy for active heading in TOC
+  // Scrollspy
   if (tocLinks.length > 0) {
-    const headingElements = Array.from(tocLinks)
-      .map(link => {
-        const slug = link.getAttribute('data-slug');
-        return slug ? document.getElementById(slug) : null;
-      })
+    const headingEls = Array.from(tocLinks)
+      .map(l => { const s = l.getAttribute('data-slug'); return s ? document.getElementById(s) : null; })
       .filter((el): el is HTMLElement => el !== null);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id;
-            tocLinks.forEach(link => {
-              const matches = link.getAttribute('data-slug') === id;
-              link.classList.toggle('active', matches);
-            });
-          }
-        });
-      },
-      {
-        rootMargin: '0px 0px -65% 0px',
-        threshold: 0.1,
-      }
-    );
+    const spy = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          const id = en.target.id;
+          tocLinks.forEach(l => l.classList.toggle('active', l.getAttribute('data-slug') === id));
+        }
+      });
+    }, { rootMargin: '0px 0px -65% 0px', threshold: 0.1 });
 
-    headingElements.forEach(el => observer.observe(el));
+    headingEls.forEach(el => spy.observe(el));
   }
+
+  // ── Keyboard shortcuts ──
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (extPanel.classList.contains('open')) { closeExtPanel(); return; }
+      if (tocSidebar?.classList.contains('open')) { closeMobileToc(); }
+    }
+  });
+
+})();
 </script>
 
-<style>
+<!-- Global body lock while stacked -->
+<style is:global>
+  body.notes-stacked {
+    overflow: hidden;
+    height: 100dvh;
+  }
+  body.notes-stacked .site-layout {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
   .desktop-only { display: inline-flex; }
   .mobile-only  { display: none; }
   .toc-backdrop { display: none; }
   .toc-count-badge { display: none; }
 
-  .note-layout-main {
-    max-width: 1040px;
+  /* ══════════════════════════════════════
+     STACKED NOTES CONTAINER
+  ══════════════════════════════════════ */
+  .notes-stack-outer {
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    height: 100dvh;
+    scroll-behavior: smooth;
+    /* Custom scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .notes-stack-outer::-webkit-scrollbar { height: 5px; }
+  .notes-stack-outer::-webkit-scrollbar-track { background: transparent; }
+  .notes-stack-outer::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .notes-stack {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 100%;
+  }
+  #stacked-columns {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  /* ══════════════════════════════════════
+     NOTE COLUMN (shared root + stacked)
+  ══════════════════════════════════════ */
+  .note-column {
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    flex-direction: row; /* collapse-btn | body side by side */
+    height: 100dvh;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+    transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+
+  .root-column {
+    width: min(760px, 90vw);
+  }
+  .stacked-column {
+    width: min(500px, 90vw);
+  }
+
+  /* Collapse button — thin vertical strip on the left of each column */
+  .col-collapse-btn {
+    flex-shrink: 0;
+    width: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 20px;
+    gap: 0;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: background var(--transition), color var(--transition);
+    user-select: none;
+    overflow: hidden;
+  }
+  .col-collapse-btn:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+  }
+  .collapse-chevron {
+    font-size: 1rem;
+    line-height: 1;
+    display: block;
+    transition: transform 0.2s ease;
+  }
+  .collapse-label-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-top: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 200px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  /* Collapsed state */
+  .note-column.collapsed {
+    width: 28px !important;
+    cursor: pointer;
+  }
+  .note-column.collapsed .col-collapse-btn {
+    width: 100%;
+    border-right: none;
+    padding-top: 16px;
+  }
+  .note-column.collapsed .collapse-chevron {
+    transform: rotate(180deg);
+  }
+  .note-column.collapsed .collapse-label-text {
+    opacity: 1;
+  }
+  .note-column.collapsed .col-body {
+    display: none;
+  }
+  .note-column.collapsed .col-collapsed-strip {
+    display: none; /* label is in the btn */
+  }
+
+  /* Scrollable body inside each column */
+  .col-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .col-body::-webkit-scrollbar { width: 4px; }
+  .col-body::-webkit-scrollbar-track { background: transparent; }
+  .col-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Collapsed strip (fallback – not shown currently; handled by btn) */
+  .col-collapsed-strip { display: none; }
+
+  /* ── Root column inner layout ── */
+  #root-body {
+    padding: 25px 30px 72px 20px;
   }
 
   .note-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 220px;
-    gap: 40px;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    gap: 32px;
     align-items: start;
   }
 
-  .note-article {
-    min-width: 0;
+  /* ── Stacked column topbar ── */
+  .stacked-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
+  .stacked-note-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .stacked-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .stacked-open-full {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 3px 6px;
+    border-radius: 3px;
+    transition: background var(--transition), color var(--transition);
+  }
+  .stacked-open-full:hover {
+    background: var(--border);
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .stacked-close-btn {
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 3px;
+    line-height: 1;
+    transition: background var(--transition), color var(--transition);
+  }
+  .stacked-close-btn:hover {
+    background: var(--border);
+    color: var(--text-primary);
+  }
+
+  /* Stacked column article padding */
+  .stacked-column .col-body > .note-article {
+    padding: 24px 24px 64px;
+  }
+  .stacked-column .col-body > .note-article .note-title {
+    font-size: 1.5rem;
+  }
+
+  /* ── Column animations ── */
+  @keyframes col-slide-in {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes col-slide-out {
+    from { opacity: 1; }
+    to   { opacity: 0; transform: translateX(24px); }
+  }
+  .col-entering {
+    animation: col-slide-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .col-leaving {
+    animation: col-slide-out 0.25s ease both;
+    pointer-events: none;
+  }
+
+  /* Flash highlight (already-open note) */
+  @keyframes col-flash {
+    0%   { background: var(--bg); }
+    30%  { background: #fff3cd; }
+    100% { background: var(--bg); }
+  }
+  .note-column.flash {
+    animation: col-flash 0.7s ease;
+  }
+
+  /* Loading spinner */
+  .col-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--text-link);
+    border-radius: 50%;
+    animation: col-spin 0.8s linear infinite;
+  }
+  @keyframes col-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ══════════════════════════════════════
+     NOTE ARTICLE (shared styles)
+  ══════════════════════════════════════ */
+  .note-article { min-width: 0; }
 
   .note-header { margin-bottom: var(--space-lg); }
 
@@ -426,27 +947,19 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     flex-wrap: wrap;
     margin-bottom: 10px;
   }
-
   .meta-item {
     display: inline-flex;
     align-items: center;
     gap: 6px;
   }
-  .meta-sep {
-    color: var(--text-muted);
-    opacity: 0.5;
-    user-select: none;
-  }
+  .meta-sep { color: var(--text-muted); opacity: 0.5; user-select: none; }
   .meta-label {
     text-transform: uppercase;
     font-size: var(--text-xs);
     color: var(--text-muted);
     letter-spacing: 0.04em;
   }
-  .note-category {
-    color: var(--text-secondary);
-    font-weight: 500;
-  }
+  .note-category { color: var(--text-secondary); font-weight: 500; }
 
   .note-title {
     font-size: 1.95rem;
@@ -456,7 +969,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     letter-spacing: -0.01em;
     color: #b22;
   }
-
   .note-desc {
     font-style: italic;
     color: var(--text-secondary);
@@ -464,7 +976,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     font-size: var(--text-base);
     line-height: 1.5;
   }
-
   .note-tags {
     display: flex;
     align-items: center;
@@ -480,13 +991,11 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     letter-spacing: 0.04em;
     margin-right: 2px;
   }
-
   .divider {
     border: none;
     border-top: 1px solid var(--border);
     margin: var(--space-lg) 0;
   }
-
   .note-footer {
     margin-top: var(--space-xl);
     padding-top: var(--space-md);
@@ -530,17 +1039,9 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     text-decoration: none;
     padding: 3px 0;
   }
-  .backlink-item:hover .backlink-title {
-    color: var(--text-link);
-    text-decoration: underline;
-  }
-  .backlink-icon {
-    font-size: 1rem;
-    line-height: 1;
-  }
-  .backlink-title {
-    font-weight: 500;
-  }
+  .backlink-item:hover .backlink-title { color: var(--text-link); text-decoration: underline; }
+  .backlink-icon { font-size: 1rem; line-height: 1; }
+  .backlink-title { font-weight: 500; }
   .backlink-badge {
     font-size: var(--text-xs);
     color: var(--text-muted);
@@ -552,7 +1053,9 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     letter-spacing: 0.04em;
   }
 
-  /* ── Maggie Appleton Style Sticky Table of Contents Sidebar ── */
+  /* ══════════════════════════════════════
+     STICKY TABLE OF CONTENTS (inside root col)
+  ══════════════════════════════════════ */
   .toc-sidebar {
     position: sticky;
     top: 32px;
@@ -560,7 +1063,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     display: flex;
     flex-direction: column;
   }
-
   .toc-card {
     background: var(--bg-surface);
     border: 1px solid var(--border);
@@ -568,10 +1070,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     padding: 10px 12px;
     transition: border-color var(--transition);
   }
-  .toc-card:hover {
-    border-color: var(--border-hover);
-  }
-
+  .toc-card:hover { border-color: var(--border-hover); }
   .toc-card-header {
     display: flex;
     align-items: center;
@@ -580,15 +1079,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     cursor: pointer;
     user-select: none;
   }
-
-  .toc-title-group {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .toc-icon {
-    color: var(--text-muted);
-  }
+  .toc-title-group { display: flex; align-items: center; gap: 5px; }
+  .toc-icon { color: var(--text-muted); }
   .toc-title {
     font-family: var(--font-sans);
     font-size: var(--text-xs);
@@ -597,7 +1089,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     letter-spacing: 0.05em;
     color: var(--text-muted);
   }
-
   .toc-toggle-btn {
     background: none;
     border: none;
@@ -612,21 +1103,10 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     border-radius: 2px;
     transition: color var(--transition);
   }
-  .toc-toggle-btn:hover {
-    color: var(--text-primary);
-  }
-
-  .toc-chevron {
-    transition: transform 0.2s ease;
-  }
-
-  .toc-card.collapsed .toc-card-body {
-    display: none;
-  }
-  .toc-card.collapsed .toc-chevron {
-    transform: rotate(180deg);
-  }
-
+  .toc-toggle-btn:hover { color: var(--text-primary); }
+  .toc-chevron { transition: transform 0.2s ease; }
+  .toc-card.collapsed .toc-card-body { display: none; }
+  .toc-card.collapsed .toc-chevron { transform: rotate(180deg); }
   .toc-card-body {
     margin-top: 8px;
     padding-top: 8px;
@@ -634,7 +1114,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     max-height: calc(100dvh - 120px);
     overflow-y: auto;
   }
-
   .toc-list {
     list-style: none;
     padding: 0;
@@ -643,14 +1122,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     flex-direction: column;
     gap: 4px;
   }
-
-  .toc-item {
-    line-height: 1.35;
-  }
-  .toc-h3 {
-    padding-left: 10px;
-  }
-
+  .toc-item { line-height: 1.35; }
+  .toc-h3 { padding-left: 10px; }
   .toc-link {
     display: inline-flex;
     align-items: baseline;
@@ -661,31 +1134,164 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     text-decoration: none;
     transition: color var(--transition);
   }
-  .toc-link:hover {
-    color: var(--text-link);
-    text-decoration: underline;
+  .toc-link:hover { color: var(--text-link); text-decoration: underline; }
+  .toc-link.active { color: var(--text-primary); font-weight: 600; }
+  .toc-link.active .toc-bullet { color: var(--text-link); }
+  .toc-bullet { color: var(--text-muted); font-weight: bold; user-select: none; font-size: 0.85em; }
+
+  /* ══════════════════════════════════════
+     EXTERNAL LINK PANEL
+  ══════════════════════════════════════ */
+  .ext-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(520px, 90vw);
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    box-shadow: -6px 0 24px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2000;
+    overflow: hidden;
   }
-  .toc-link.active {
-    color: var(--text-primary);
+  .ext-panel.open {
+    transform: translateX(0);
+  }
+
+  .ext-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .ext-panel-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .ext-panel-icon { color: var(--text-muted); font-size: 0.9rem; }
+  .ext-panel-hostname {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
     font-weight: 600;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .toc-link.active .toc-bullet {
+  .ext-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .ext-newtab-btn {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
     color: var(--text-link);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: background var(--transition), border-color var(--transition);
+    white-space: nowrap;
   }
-
-  .toc-bullet {
+  .ext-newtab-btn:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-hover);
+    text-decoration: none;
+  }
+  .ext-panel-close {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
     color: var(--text-muted);
-    font-weight: bold;
-    user-select: none;
-    font-size: 0.85em;
+    padding: 4px 6px;
+    border-radius: 3px;
+    line-height: 1;
+    transition: background var(--transition), color var(--transition);
+  }
+  .ext-panel-close:hover { background: var(--border); color: var(--text-primary); }
+
+  .ext-panel-url-bar {
+    padding: 6px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
   }
 
-  @media (max-width: 768px) {
-    .note-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
+  .ext-panel-body {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  .ext-iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
 
+  .ext-blocked {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 100%;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .ext-blocked-icon { font-size: 2rem; }
+  .ext-blocked-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .ext-blocked-desc {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .ext-open-btn {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 8px 20px;
+    background: var(--text-primary);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: opacity var(--transition);
+  }
+  .ext-open-btn:hover { opacity: 0.85; text-decoration: none; color: #fff; }
+
+  /* ══════════════════════════════════════
+     MOBILE (≤768px): disable stacking
+  ══════════════════════════════════════ */
+  @media (max-width: 768px) {
     .desktop-only { display: none !important; }
     .mobile-only  { display: flex !important; }
     .toc-count-badge {
@@ -701,7 +1307,33 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       line-height: 1.3;
     }
 
-    /* Mobile Backdrop Overlay */
+    /* Un-stack: single column, body scrolls normally */
+    .notes-stack-outer {
+      overflow-x: visible;
+      overflow-y: visible;
+      height: auto;
+      display: block;
+    }
+    .notes-stack { display: block; }
+    .note-column {
+      width: 100% !important;
+      height: auto !important;
+      border-right: none;
+      overflow: visible;
+    }
+    .col-collapse-btn { display: none; }
+    .col-body { overflow: visible; height: auto; }
+    #root-body {
+      padding: var(--space-md) var(--space-md) var(--space-xl);
+    }
+    .note-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    /* Hide stacked columns on mobile */
+    #stacked-columns { display: none; }
+
+    /* ── Mobile Backdrop Overlay ── */
     .toc-backdrop {
       display: block;
       position: fixed;
@@ -713,21 +1345,14 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       visibility: hidden;
       transition: opacity 0.25s ease, visibility 0.25s ease;
     }
-    .toc-backdrop.open {
-      opacity: 1;
-      visibility: visible;
-    }
+    .toc-backdrop.open { opacity: 1; visibility: visible; }
 
-    /* Mobile Full-Screen TOC Drawer */
+    /* ── Mobile Full-Screen TOC Drawer ── */
     .toc-sidebar {
       position: fixed !important;
       inset: 0 !important;
       top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
       width: 100% !important;
-      height: 100% !important;
       height: 100dvh !important;
       max-height: none !important;
       background: var(--bg);
@@ -741,10 +1366,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       display: flex;
       flex-direction: column;
     }
-    .toc-sidebar.open {
-      transform: translateX(0);
-    }
-
+    .toc-sidebar.open { transform: translateX(0); }
     .toc-card {
       background: none;
       border: none;
@@ -755,20 +1377,12 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       height: 100%;
       width: 100%;
     }
-
     .toc-card-header {
       padding-bottom: 12px;
       border-bottom: 1px solid var(--border);
       cursor: default;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
     }
-
-    .toc-title {
-      font-size: var(--text-sm);
-    }
-
+    .toc-title { font-size: var(--text-sm); }
     .toc-drawer-close-btn {
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -787,7 +1401,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       background: #eee;
       border-color: var(--border-hover);
     }
-
     .toc-card.collapsed .toc-card-body,
     .toc-card-body {
       display: block !important;
@@ -798,142 +1411,10 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       border-top: none;
       margin-top: 0;
     }
+    .toc-list { gap: 6px; }
+    .toc-link { padding: 6px 0; font-size: var(--text-base); line-height: 1.45; }
 
-    .toc-list {
-      gap: 6px;
-    }
-
-    .toc-link {
-      padding: 6px 0;
-      font-size: var(--text-base);
-      line-height: 1.45;
-    }
-  /* ── Andy Matuschak Style Stacked Note Drawer ── */
-  .drawer-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.25s ease, visibility 0.25s ease;
-    z-index: 998;
-  }
-  .drawer-backdrop.open {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .note-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(580px, 92vw);
-    background: var(--bg);
-    border-left: 1px solid var(--border);
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 999;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .note-drawer.open {
-    transform: translateX(0);
-  }
-
-  .drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-surface);
-  }
-  .drawer-controls {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .drawer-badge {
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-  }
-  .drawer-full-btn {
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    color: var(--text-link);
-    text-decoration: none;
-    font-weight: 500;
-  }
-  .drawer-full-btn:hover {
-    text-decoration: underline;
-  }
-  .drawer-close-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: var(--text-muted);
-    padding: 4px 8px;
-    line-height: 1;
-    border-radius: 4px;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .drawer-close-btn:hover {
-    background: var(--border);
-    color: var(--text-primary);
-  }
-
-  .drawer-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px;
-    scroll-behavior: smooth;
-  }
-
-  .drawer-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-    gap: 12px;
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-  }
-  .drawer-spinner {
-    width: 28px;
-    height: 28px;
-    border: 3px solid var(--border);
-    border-top-color: var(--text-link);
-    border-radius: 50%;
-    animation: drawer-spin 0.8s linear infinite;
-  }
-  @keyframes drawer-spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .drawer-error {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-secondary);
-  }
-  .drawer-retry-btn {
-    display: inline-block;
-    margin-top: 12px;
-    padding: 6px 14px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text-primary);
-    text-decoration: none;
+    /* External panel full-screen on mobile */
+    .ext-panel { width: 100vw; }
   }
 </style>
