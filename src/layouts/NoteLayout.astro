@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
+import { ClientRouter } from 'astro:transitions';
 import type { BacklinkEntry } from '../utils/backlinks';
 import { url } from '../utils/url';
 
@@ -39,25 +40,29 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
 ---
 
 <BaseLayout title={title} description={description}>
+  <ClientRouter />
+
   <Sidebar hasToc={tocHeadings.length > 0} />
 
-  <!-- ═══ STACKED NOTES OUTER ═══ -->
+  <!-- ═══ STACKED NOTES OUTER ═══
+       Default: normal note page (no stack UI).
+       With ?stackedNotes=... the JS engine adds .notes-stacked to <body>
+       and injects trail columns to the LEFT of this root column. -->
   <div class="notes-stack-outer" id="notes-stack-outer">
     <div class="notes-stack" id="notes-stack">
 
-      <!-- ─── ROOT COLUMN ─── -->
-      <div class="note-column root-column" id="root-column">
+      <!-- Trail columns injected here by JS (left of root) -->
+      <div id="trail-columns"></div>
 
-        <!-- Collapse strip (click to collapse/expand) -->
+      <!-- ─── ROOT COLUMN (the page itself) ─── -->
+      <div class="note-column root-column" id="root-column">
         <button class="col-collapse-btn" id="root-collapse-btn"
           aria-label="Collapse column" title="Collapse this note">
           <span class="collapse-chevron">‹</span>
           <span class="collapse-label-text">{title}</span>
         </button>
 
-        <!-- Inner scroll body of root column -->
         <div class="col-body" id="root-body">
-
           {tocHeadings.length > 0 && (
             <div id="toc-backdrop" class="toc-backdrop" aria-hidden="true"></div>
           )}
@@ -178,37 +183,43 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
         </div><!-- /col-body -->
       </div><!-- /root-column -->
 
-      <!-- ─── STACKED COLUMNS INJECT HERE ─── -->
-      <div id="stacked-columns"></div>
-
     </div><!-- /notes-stack -->
   </div><!-- /notes-stack-outer -->
 
-  <!-- ═══ EXTERNAL LINK PANEL ═══ -->
-  <div id="ext-panel" class="ext-panel" aria-hidden="true" aria-label="External site preview">
+  <!-- ═══ EXTERNAL LINK PREVIEW PANEL (OG metadata card) ═══ -->
+  <div id="ext-panel" class="ext-panel" aria-hidden="true" aria-label="External link preview">
     <div class="ext-panel-header">
       <div class="ext-panel-meta">
-        <span class="ext-panel-icon">↗</span>
+        <img id="ext-favicon" class="ext-favicon" src="" alt="" width="16" height="16" hidden />
         <span class="ext-panel-hostname" id="ext-panel-hostname"></span>
       </div>
       <div class="ext-panel-actions">
         <a id="ext-newtab-btn" href="#" target="_blank" rel="noopener noreferrer" class="ext-newtab-btn">
-          Open in New Tab
+          Open in New Tab ↗
         </a>
         <button id="ext-panel-close" class="ext-panel-close" aria-label="Close preview">✕</button>
       </div>
     </div>
-    <div class="ext-panel-url-bar" id="ext-panel-url-bar"></div>
     <div class="ext-panel-body">
-      <iframe id="ext-iframe" class="ext-iframe" src=""
-        title="External page preview"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups">
-      </iframe>
-      <div id="ext-blocked" class="ext-blocked">
-        <div class="ext-blocked-icon">🔒</div>
-        <p class="ext-blocked-title">Preview unavailable</p>
-        <p class="ext-blocked-desc">This site blocks embedding (X-Frame-Options).</p>
-        <a id="ext-blocked-link" href="#" target="_blank" rel="noopener noreferrer" class="ext-open-btn">
+      <div id="ext-loading" class="ext-loading">Loading link preview…</div>
+      <div id="ext-card" class="ext-card" hidden>
+        <div class="ext-card-image-wrap" id="ext-image-wrap" hidden>
+          <img id="ext-image" class="ext-card-image" src="" alt="" loading="lazy" />
+        </div>
+        <div class="ext-card-content">
+          <h3 id="ext-title" class="ext-card-title"></h3>
+          <p id="ext-desc" class="ext-card-desc"></p>
+          <div class="ext-card-url-row">
+            <span class="ext-card-favicon" id="ext-card-favicon-wrap" hidden>
+              <img id="ext-card-favicon" src="" alt="" width="14" height="14" />
+            </span>
+            <span id="ext-url" class="ext-card-url"></span>
+          </div>
+        </div>
+      </div>
+      <div id="ext-fallback" class="ext-fallback" hidden>
+        <p class="ext-fallback-text">No preview metadata available.</p>
+        <a id="ext-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="ext-open-btn">
           Open in New Tab ↗
         </a>
       </div>
@@ -218,45 +229,50 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
 </BaseLayout>
 
 <!-- ════════════════════════════════════════════════════════
-     STACKED NOTES ENGINE
+     STACKED NOTES ENGINE (re-root model, see ADR-001)
      ════════════════════════════════════════════════════════ -->
 <script>
+
 (function () {
   // ── Base path detection ──
-  const BASE = (window.location.pathname.startsWith('/breath')) ? '/breath' : '';
+  const BASE = window.location.pathname.startsWith('/breath') ? '/breath' : '';
 
   // ── Root note ID from URL ──
-  const pathParts = window.location.pathname.replace(/\/$/, '').split('/');
+    const pathParts = window.location.pathname.replace(/\/$/, '').split('/');
   const ROOT_ID = pathParts[pathParts.length - 1];
-
-  // ── State ──
-  let stack: string[] = []; // IDs of stacked (non-root) columns
+  let gen = 0; // injection generation — stale async loops bail out
+  let trail: string[] = [];
   const cache = new Map<string, string>(); // id → article innerHTML
 
   // ── DOM refs ──
-  const outer     = document.getElementById('notes-stack-outer')!;
-  const stacksEl  = document.getElementById('stacked-columns')!;
-  const rootCol   = document.getElementById('root-column')!;
-
-  // ─── Body lock for stacked mode ───
-  document.body.classList.add('notes-stacked');
+  const outer    = document.getElementById('notes-stack-outer')!;
+  const trailEl  = () => document.getElementById('trail-columns')!;
+  const rootCol  = document.getElementById('root-column')!;
 
   // ════════════════════════════════
-  // URL State
+  // URL state
   // ════════════════════════════════
-  function readURLStack(): string[] {
+  function readTrailFromURL(): string[] {
     return new URLSearchParams(window.location.search).getAll('stackedNotes');
   }
 
-  function syncURL(newStack: string[]) {
+  function buildURL(rootId: string, trailIds: string[]): string {
     const p = new URLSearchParams();
-    newStack.forEach(id => p.append('stackedNotes', id));
+    trailIds.forEach(id => p.append('stackedNotes', id));
     const qs = p.toString() ? '?' + p.toString() : '';
-    history.pushState({ stack: newStack }, '', window.location.pathname + qs);
+    return `${BASE}/notes/${rootId}/${qs}`;
+  }
+
+  function syncURL(newTrail: string[]) {
+    trail = newTrail;
+    const p = new URLSearchParams();
+    trail.forEach(id => p.append('stackedNotes', id));
+    const qs = p.toString() ? '?' + p.toString() : '';
+    history.pushState({ trail }, '', window.location.pathname + qs);
   }
 
   // ════════════════════════════════
-  // Fetch note HTML
+  // Fetch note HTML (extract article)
   // ════════════════════════════════
   async function fetchNote(id: string): Promise<string | null> {
     if (cache.has(id)) return cache.get(id)!;
@@ -266,13 +282,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
       const article = doc.querySelector('article.note-article');
       if (!article) return null;
-      // Rewrite relative hrefs to absolute
-      article.querySelectorAll('a[href]').forEach(a => {
-        const href = a.getAttribute('href') || '';
-        if (href.startsWith('/') && !href.startsWith('//')) {
-          // already absolute path – keep as-is; BASE already in href from build
-        }
-      });
       const html = article.innerHTML;
       cache.set(id, html);
       return html;
@@ -282,304 +291,278 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   }
 
   // ════════════════════════════════
-  // Column factory
+  // Column factory (trail columns)
   // ════════════════════════════════
   function buildColumn(id: string, html: string): HTMLElement {
     const col = document.createElement('div');
-    col.className = 'note-column stacked-column';
+    col.className = 'note-column trail-column';
     col.dataset.noteId = id;
 
     col.innerHTML = `
-      <button class="col-collapse-btn stacked-collapse-btn" aria-label="Collapse" title="Collapse">
+      <button class="col-collapse-btn trail-collapse-btn" aria-label="Collapse" title="Collapse">
         <span class="collapse-chevron">‹</span>
         <span class="collapse-label-text"></span>
       </button>
       <div class="col-body">
-        <div class="stacked-topbar">
-          <span class="stacked-note-title"></span>
-          <div class="stacked-topbar-actions">
-            <a class="stacked-open-full" href="${BASE}/notes/${id}/" title="Open full page">↗</a>
-            <button class="stacked-close-btn" aria-label="Close" title="Close">✕</button>
+        <div class="trail-topbar">
+          <span class="trail-note-title"></span>
+          <div class="trail-topbar-actions">
+            <a class="trail-open-full" href="${BASE}/notes/${id}/" title="Open full page">↗</a>
+            <button class="trail-close-btn" aria-label="Close" title="Close">✕</button>
           </div>
         </div>
         <article class="note-article">${html}</article>
       </div>
-      <div class="col-collapsed-strip">
-        <span class="col-collapsed-title"></span>
-      </div>
     `;
 
-    // Extract title
     const titleEl = col.querySelector('.note-article .note-title') || col.querySelector('.note-article h1');
     const noteTitle = titleEl?.textContent?.trim() || id;
-    const titleBar  = col.querySelector('.stacked-note-title') as HTMLElement;
+    const titleBar  = col.querySelector('.trail-note-title') as HTMLElement;
     const labelText = col.querySelector('.collapse-label-text') as HTMLElement;
-    const stripTitle = col.querySelector('.col-collapsed-title') as HTMLElement;
     if (titleBar)  titleBar.textContent  = noteTitle;
     if (labelText) labelText.textContent = noteTitle;
-    if (stripTitle) stripTitle.textContent = noteTitle;
 
-    // Collapse button
-    col.querySelector('.stacked-collapse-btn')?.addEventListener('click', (e) => {
+    col.querySelector('.trail-collapse-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      toggleColCollapse(col);
+      toggleCollapse(col);
     });
-
-    // Close button
-    col.querySelector('.stacked-close-btn')?.addEventListener('click', (e) => {
+    col.querySelector('.trail-close-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      removeColumn(id);
-    });
-
-    // Clicking collapsed strip expands
-    const strip = col.querySelector('.col-collapsed-strip');
-    strip?.addEventListener('click', () => {
-      if (col.classList.contains('collapsed')) expandCol(col);
+      removeTrailColumn(id);
     });
 
     return col;
   }
 
+    // ════════════════════════════════
+  // Trail injection
   // ════════════════════════════════
-  // Push / Remove columns
-  // ════════════════════════════════
-  async function pushColumn(id: string, skipURL = false) {
-    // Already in stack? Scroll + flash
-    const existing = stacksEl.querySelector<HTMLElement>(`.stacked-column[data-note-id="${id}"]`);
-    if (existing) {
-      if (existing.classList.contains('collapsed')) expandCol(existing);
-      scrollToCol(existing);
-      existing.classList.add('flash');
-      setTimeout(() => existing.classList.remove('flash'), 700);
-      return;
+  async function injectTrail(ids: string[]) {
+    const myGen = ++gen;
+    trailEl().innerHTML = '';
+    for (const id of ids) {
+      if (myGen !== gen) return; // superseded by a newer injection
+      const placeholder = document.createElement('div');
+      placeholder.className = 'note-column trail-column loading-col';
+      placeholder.dataset.noteId = id;
+      placeholder.innerHTML = `<div class="col-body" style="display:flex;align-items:center;justify-content:center;height:100%"><div class="col-spinner"></div></div>`;
+      trailEl().appendChild(placeholder);
+
+      const html = await fetchNote(id);
+      if (myGen !== gen) return;
+      placeholder.remove();
+      if (html == null) {
+        const errCol = document.createElement('div');
+        errCol.className = 'note-column trail-column error-col';
+        errCol.dataset.noteId = id;
+        errCol.innerHTML = `<div class="col-body" style="padding:32px 24px"><p style="color:var(--text-secondary);margin-bottom:12px">Couldn't load note.</p><a href="${BASE}/notes/${id}/" style="color:var(--text-link)">Open full note →</a></div>`;
+        trailEl().appendChild(errCol);
+      } else {
+        trailEl().appendChild(buildColumn(id, html));
+      }
     }
-    // Same as root?
-    if (id === ROOT_ID) {
-      scrollToCol(rootCol);
-      return;
-    }
+    applyAutoCollapse();
+    scrollToRoot();
+  }
 
-    if (!skipURL) {
-      stack.push(id);
-      syncURL(stack);
-    }
-
-    // Loading placeholder
-    const placeholder = document.createElement('div');
-    placeholder.className = 'note-column stacked-column loading-col';
-    placeholder.dataset.noteId = id;
-    placeholder.innerHTML = `
-      <div class="col-body" style="display:flex;align-items:center;justify-content:center;height:100%">
-        <div class="col-spinner"></div>
-      </div>`;
-    stacksEl.appendChild(placeholder);
-    scrollToEnd();
-
-    const html = await fetchNote(id);
-    placeholder.remove();
-
-    // Check still needed
-    if (!stack.includes(id)) return;
-
-    if (html == null) {
-      const errCol = document.createElement('div');
-      errCol.className = 'note-column stacked-column error-col';
-      errCol.dataset.noteId = id;
-      errCol.innerHTML = `
-        <div class="col-body" style="padding:32px 24px">
-          <p style="color:var(--text-secondary);margin-bottom:12px">Couldn't load note.</p>
-          <a href="${BASE}/notes/${id}/" style="color:var(--text-link)">Open full note →</a>
-          <button class="stacked-close-btn" style="margin-top:16px;display:block" aria-label="Close">Close ✕</button>
-        </div>`;
-      errCol.querySelector('.stacked-close-btn')?.addEventListener('click', () => removeColumn(id));
-      stacksEl.appendChild(errCol);
-    } else {
-      const col = buildColumn(id, html);
-      stacksEl.appendChild(col);
-      // Animate in
-      requestAnimationFrame(() => {
-        col.classList.add('col-entering');
-        setTimeout(() => col.classList.remove('col-entering'), 350);
-        scrollToCol(col);
-      });
+  function applyAutoCollapse() {
+    // Trail >= 4 → auto-collapse all but the last two (keep newest 2 + root visible)
+    const cols = Array.from(trailEl().querySelectorAll<HTMLElement>('.trail-column'));
+    if (cols.length >= 4) {
+      cols.slice(0, cols.length - 2).forEach(c => c.classList.add('collapsed'));
     }
   }
 
-  function removeColumn(id: string) {
-    const col = stacksEl.querySelector<HTMLElement>(`[data-note-id="${id}"]`);
+  // ════════════════════════════════
+  // Close a trail column (URL-remove model)
+  // ════════════════════════════════
+  function removeTrailColumn(id: string) {
+    const col = trailEl().querySelector<HTMLElement>(`[data-note-id="${id}"]`);
     if (col) {
       col.classList.add('col-leaving');
-      setTimeout(() => col.remove(), 280);
+      setTimeout(() => col.remove(), 250);
     }
-    stack = stack.filter(s => s !== id);
-    syncURL(stack);
+    syncURL(trail.filter(t => t !== id));
+    applyAutoCollapse();
   }
 
   // ════════════════════════════════
-  // Collapse / Expand
+  // Collapse / expand
   // ════════════════════════════════
-  function collapseCol(col: HTMLElement) {
-    col.classList.add('collapsed');
+  function toggleCollapse(col: HTMLElement) {
+    const collapsed = col.classList.toggle('collapsed');
     const btn = col.querySelector('.col-collapse-btn');
-    btn?.setAttribute('aria-label', 'Expand');
-    btn?.setAttribute('title', 'Expand');
-  }
-
-  function expandCol(col: HTMLElement) {
-    col.classList.remove('collapsed');
-    const btn = col.querySelector('.col-collapse-btn');
-    btn?.setAttribute('aria-label', 'Collapse');
-    btn?.setAttribute('title', 'Collapse');
-    setTimeout(() => scrollToCol(col), 50);
-  }
-
-  function toggleColCollapse(col: HTMLElement) {
-    if (col.classList.contains('collapsed')) {
-      expandCol(col);
-    } else {
-      collapseCol(col);
-    }
+    btn?.setAttribute('aria-label', collapsed ? 'Expand' : 'Collapse');
+    btn?.setAttribute('title', collapsed ? 'Expand' : 'Collapse');
+    if (!collapsed) setTimeout(() => scrollToCol(col), 60);
   }
 
   // Root collapse
   const rootCollapseBtn = document.getElementById('root-collapse-btn');
   rootCollapseBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    toggleColCollapse(rootCol);
+    toggleCollapse(rootCol);
   });
   rootCol.addEventListener('click', () => {
-    if (rootCol.classList.contains('collapsed')) expandCol(rootCol);
+    if (rootCol.classList.contains('collapsed')) toggleCollapse(rootCol);
   });
 
   // ════════════════════════════════
   // Scroll helpers
   // ════════════════════════════════
-  function scrollToEnd() {
+  function scrollToRoot() {
     outer.scrollTo({ left: outer.scrollWidth, behavior: 'smooth' });
   }
-
   function scrollToCol(col: HTMLElement) {
     const outerRect = outer.getBoundingClientRect();
     const colRect = col.getBoundingClientRect();
-    const scrollLeft = outer.scrollLeft + colRect.left - outerRect.left;
-    outer.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    const left = outer.scrollLeft + colRect.left - outerRect.left;
+    outer.scrollTo({ left, behavior: 'smooth' });
   }
 
+  // Rewrites internal note link hrefs to re-root URLs so ClientRouter
+  // performs the View Transition navigation itself.
   // ════════════════════════════════
-  // Link wiring
+  document.addEventListener('click', (e: MouseEvent) => {
+    if (window.innerWidth <= 768) return; // mobile: normal navigation
+    const a = (e.target as HTMLElement).closest('a');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (!href || href.startsWith('#') || href.startsWith('mailto:')) return;
+    if (a.classList.contains('trail-open-full') || a.classList.contains('ext-newtab-btn') || a.classList.contains('ext-open-btn') || a.id === 'ext-fallback-link') return;
+    if (a.hasAttribute('data-astro-prefetch') || a.hasAttribute('data-astro-transition')) return;
+
+    // External link → OG preview panel
+    if (/^https?:\/\//.test(href)) {
+      e.preventDefault();
+      e.stopPropagation();
+      openExtPanel(href);
+      return;
+    }
+
+    // Internal note link → rewrite href to re-root URL; ClientRouter navigates
+    const m = href.match(/(?:\/breath)?\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
+    if (m) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const clickedId = m[1];
+      // Read current root + trail fresh from the URL (module state can go
+      // stale across ClientRouter view-transition swaps)
+      const pathParts = window.location.pathname.replace(/\/$/, '').split('/');
+      const curRoot = pathParts[pathParts.length - 1];
+      if (clickedId === curRoot) return; // already root — let default happen
+      const curTrail = readTrailFromURL();
+      const newTrail = [curRoot, ...curTrail].filter(id => id !== clickedId);
+      a.setAttribute('href', buildURL(clickedId, newTrail));
+    }
+  }, true);
   // ════════════════════════════════
-   function onLinkClick(e: MouseEvent) {
-     if (window.innerWidth <= 768) return; // mobile: normal navigation
-     const a = (e.target as HTMLElement).closest('a');
-     if (!a) return;
-     const href = a.getAttribute('href') || '';
-     if (!href || href.startsWith('#') || href.startsWith('mailto:')) return;
-     if (a.classList.contains('stacked-open-full')) return; // explicit full-page link
-    if (a.id === 'ext-newtab-btn' || a.id === 'ext-blocked-link') return; // external panel buttons
-
-     // External link
-     if (/^https?:\/\//.test(href)) {
-       e.preventDefault();
-       openExtPanel(href);
-       return;
-     }
-
-     // Internal note link
-     const m = href.match(/(?:\/breath)?\/notes\/([a-zA-Z0-9_\-\.]+)\/?$/);
-     if (m) {
-       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-       e.preventDefault();
-       pushColumn(m[1]);
-     }
-   }
-
-  // Delegated document-level click listener for all links
-  document.addEventListener('click', onLinkClick as EventListener);
+  // ════════════════════════════════
   // Popstate (browser back/forward)
   // ════════════════════════════════
-  window.addEventListener('popstate', async (ev) => {
-    const newStack: string[] = (ev.state?.stack) ?? readURLStack();
-    // Clear current
-    stacksEl.innerHTML = '';
-    stack = [];
-    for (const id of newStack) {
-      stack.push(id);
-      await pushColumn(id, true);
-    }
+  window.addEventListener('popstate', (ev) => {
+    const ids: string[] = ev.state?.trail ?? readTrailFromURL();
+    trail = ids;
+    injectTrail(ids);
   });
 
   // ════════════════════════════════
-  // Boot from URL
+  // Boot: activate stack mode if trail present
   // ════════════════════════════════
-  (async () => {
-    const init = readURLStack();
-    for (const id of init) {
-      stack.push(id);
-      await pushColumn(id, true);
+  function boot() {
+    const ids = readTrailFromURL();
+    trail = ids;
+    if (ids.length > 0) {
+      document.body.classList.add('notes-stacked');
+      injectTrail(ids);
     }
-  })();
+  }
+  boot();
+  // ClientRouter re-runs the page script after view-transition navigation
+  document.addEventListener('astro:page-load', () => boot());
 
   // ════════════════════════════════
-  // External Link Panel
+  // External Link Panel (OG metadata card)
   // ════════════════════════════════
-  const extPanel    = document.getElementById('ext-panel')!;
-  const extIframe   = document.getElementById('ext-iframe') as HTMLIFrameElement;
-  const extHostname = document.getElementById('ext-panel-hostname')!;
-  const extUrlBar   = document.getElementById('ext-panel-url-bar')!;
-  const extNewtab   = document.getElementById('ext-newtab-btn') as HTMLAnchorElement;
-  const extBlocked  = document.getElementById('ext-blocked')!;
-  const extBlockedLink = document.getElementById('ext-blocked-link') as HTMLAnchorElement;
-  const extClose    = document.getElementById('ext-panel-close')!;
+  const extPanel      = document.getElementById('ext-panel')!;
+  const extHostname   = document.getElementById('ext-panel-hostname')!;
+  const extNewtab     = document.getElementById('ext-newtab-btn') as HTMLAnchorElement;
+  const extClose      = document.getElementById('ext-panel-close')!;
+  const extLoading    = document.getElementById('ext-loading')!;
+  const extCard       = document.getElementById('ext-card')!;
+  const extTitle      = document.getElementById('ext-title')!;
+  const extDesc       = document.getElementById('ext-desc')!;
+  const extUrl        = document.getElementById('ext-url')!;
+  const extFavicon    = document.getElementById('ext-favicon') as HTMLImageElement;
+  const extImage      = document.getElementById('ext-image') as HTMLImageElement;
+  const extImageWrap  = document.getElementById('ext-image-wrap')!;
+  const extCardFav    = document.getElementById('ext-card-favicon') as HTMLImageElement;
+  const extCardFavW   = document.getElementById('ext-card-favicon-wrap')!;
+  const extFallback   = document.getElementById('ext-fallback')!;
+  const extFallbackLk = document.getElementById('ext-fallback-link') as HTMLAnchorElement;
 
-  function openExtPanel(href: string) {
+  let ogCache: Record<string, any> | null = null;
+
+  async function loadOgCache() {
+    if (ogCache) return ogCache;
     try {
-      const u = new URL(href);
-      extHostname.textContent = u.hostname;
-      extUrlBar.textContent   = href.length > 72 ? href.slice(0, 72) + '…' : href;
+      const res = await fetch(`${BASE}/og-cache.json`);
+      ogCache = res.ok ? await res.json() : {};
     } catch {
-      extHostname.textContent = href;
-      extUrlBar.textContent   = href;
+      ogCache = {};
     }
-    extNewtab.href = href;
-    extBlockedLink.href = href;
-    extBlocked.style.display = 'none';
-    extIframe.style.display  = 'block';
-    extPanel.setAttribute('aria-hidden', 'false');
-    extPanel.classList.add('open');
-
-    extIframe.src = '';
-    // Reset handlers
-    const freshIframe = extIframe.cloneNode(false) as HTMLIFrameElement;
-    extIframe.parentNode?.replaceChild(freshIframe, extIframe);
-
-    freshIframe.onload = () => {
-      try {
-        const doc = freshIframe.contentDocument;
-        if (!doc || doc.readyState === 'complete' && doc.body?.innerHTML === '') {
-          showBlocked();
-        }
-      } catch {
-        // Cross-origin access denied = loaded fine, site allows iframes
-      }
-    };
-    freshIframe.onerror = () => showBlocked();
-
-    // Heuristic: set src with a timeout to catch synchronous X-Frame-Options refusals
-    setTimeout(() => { freshIframe.src = href; }, 30);
+    return ogCache;
   }
 
-  function showBlocked() {
-    const iframe = document.getElementById('ext-iframe') as HTMLIFrameElement | null;
-    if (iframe) iframe.style.display = 'none';
-    extBlocked.style.display = 'flex';
+  function showPanel() {
+    extPanel.setAttribute('aria-hidden', 'false');
+    extPanel.classList.add('open');
+    document.body.classList.add('ext-open');
+  }
+
+  function openExtPanel(href: string) {
+    let hostname = href;
+    try { hostname = new URL(href).hostname; } catch {}
+    extHostname.textContent = hostname;
+    extNewtab.href = href;
+    extFallbackLk.href = href;
+    extFavicon.hidden = true;
+    extLoading.hidden = false;
+    extCard.hidden = true;
+    extFallback.hidden = true;
+    showPanel();
+
+    loadOgCache().then(cache => {
+      const meta = cache?.[href];
+      if (meta && (meta.title || meta.description)) {
+        extLoading.hidden = true;
+        extCard.hidden = false;
+        extTitle.textContent = meta.title || hostname;
+        extDesc.textContent = meta.description || '';
+        extDesc.hidden = !meta.description;
+        extUrl.textContent = href.length > 80 ? href.slice(0, 80) + '…' : href;
+        if (meta.image) {
+          extImage.src = meta.image;
+          extImageWrap.hidden = false;
+        } else {
+          extImageWrap.hidden = true;
+        }
+        if (meta.favicon) {
+          extCardFav.src = meta.favicon;
+          extCardFavW.hidden = false;
+        } else {
+          extCardFavW.hidden = true;
+        }
+      } else {
+        extLoading.hidden = true;
+        extFallback.hidden = false;
+      }
+    });
   }
 
   function closeExtPanel() {
     extPanel.classList.remove('open');
     extPanel.setAttribute('aria-hidden', 'true');
-    const iframe = document.getElementById('ext-iframe') as HTMLIFrameElement | null;
-    if (iframe) { iframe.src = ''; iframe.style.display = 'block'; }
-    extBlocked.style.display = 'none';
+    document.body.classList.remove('ext-open');
   }
 
   extClose.addEventListener('click', closeExtPanel);
@@ -648,7 +631,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     headingEls.forEach(el => spy.observe(el));
   }
 
-  // ── Keyboard shortcuts ──
+  // ── Keyboard ──
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (extPanel.classList.contains('open')) { closeExtPanel(); return; }
@@ -659,9 +642,10 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
 })();
 </script>
 
-<!-- Global body lock while stacked -->
+<!-- Global body locks (only active in stack / ext-panel mode) -->
 <style is:global>
-  body.notes-stacked {
+  body.notes-stacked,
+  body.ext-open {
     overflow: hidden;
     height: 100dvh;
   }
@@ -669,51 +653,87 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     height: 100dvh;
     overflow: hidden;
   }
+</style>
 
+<style is:global>
   .desktop-only { display: inline-flex; }
   .mobile-only  { display: none; }
   .toc-backdrop { display: none; }
   .toc-count-badge { display: none; }
 
   /* ══════════════════════════════════════
-     STACKED NOTES CONTAINER
+     DEFAULT: natural note page (no stack)
+     The root column is a normal page: body scrolls,
+     max-width prose, TOC grid. Stack UI is hidden.
   ══════════════════════════════════════ */
   .notes-stack-outer {
+    max-width: 1040px;
+    width: 100%;
+  }
+  .notes-stack {
+    display: block;
+  }
+  .root-column {
+    width: 100%;
+    border-right: none;
+    height: auto;
+    overflow: visible;
+  }
+  .root-column .col-collapse-btn { display: none; }
+  .root-column .col-body {
+    overflow: visible;
+    height: auto;
+  }
+  #root-body {
+    padding: 25px 30px 72px 20px;
+  }
+  #trail-columns { display: none; }
+
+  .note-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ══════════════════════════════════════
+     STACK MODE: body.notes-stacked
+     Root becomes a column on the right; trail columns slide in to its left.
+  ══════════════════════════════════════ */
+  body.notes-stacked .notes-stack-outer {
     display: flex;
     align-items: stretch;
     overflow-x: auto;
     overflow-y: hidden;
-    flex: 1;
     height: 100dvh;
+    max-width: none;
     scroll-behavior: smooth;
-    /* Custom scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
-  .notes-stack-outer::-webkit-scrollbar { height: 5px; }
-  .notes-stack-outer::-webkit-scrollbar-track { background: transparent; }
-  .notes-stack-outer::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  body.notes-stacked .notes-stack-outer::-webkit-scrollbar { height: 5px; }
+  body.notes-stacked .notes-stack-outer::-webkit-scrollbar-track { background: transparent; }
+  body.notes-stacked .notes-stack-outer::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .notes-stack {
+  body.notes-stacked .notes-stack {
     display: flex;
     flex-direction: row;
     align-items: stretch;
     min-height: 100%;
   }
-  #stacked-columns {
+
+  body.notes-stacked #trail-columns {
     display: flex;
     flex-direction: row;
     align-items: stretch;
   }
 
-  /* ══════════════════════════════════════
-     NOTE COLUMN (shared root + stacked)
-  ══════════════════════════════════════ */
-  .note-column {
+  /* Columns (shared) — only in stack mode */
+  body.notes-stacked .note-column {
     flex-shrink: 0;
     position: relative;
     display: flex;
-    flex-direction: row; /* collapse-btn | body side by side */
+    flex-direction: row;
     height: 100dvh;
     border-right: 1px solid var(--border);
     background: var(--bg);
@@ -721,14 +741,24 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     overflow: hidden;
   }
 
-  .root-column {
-    width: min(760px, 90vw);
+  body.notes-stacked .root-column {
+    width: min(620px, 90vw);
   }
-  .stacked-column {
-    width: min(500px, 90vw);
+  body.notes-stacked .trail-column {
+    width: min(420px, 90vw);
+  }
+  body.notes-stacked .root-column .col-collapse-btn {
+    display: flex;
+  }
+  body.notes-stacked #root-body {
+    padding: 20px 22px 64px 14px;
+  }
+  body.notes-stacked .note-grid {
+    grid-template-columns: minmax(0, 1fr) 170px;
+    gap: 24px;
   }
 
-  /* Collapse button — thin vertical strip on the left of each column */
+  /* Collapse button — vertical strip on the left of each column */
   .col-collapse-btn {
     flex-shrink: 0;
     width: 20px;
@@ -792,11 +822,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   .note-column.collapsed .col-body {
     display: none;
   }
-  .note-column.collapsed .col-collapsed-strip {
-    display: none; /* label is in the btn */
-  }
 
-  /* Scrollable body inside each column */
+  /* Column body scroll */
   .col-body {
     flex: 1;
     overflow-y: auto;
@@ -809,27 +836,12 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   .col-body::-webkit-scrollbar-track { background: transparent; }
   .col-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  /* Collapsed strip (fallback – not shown currently; handled by btn) */
-  .col-collapsed-strip { display: none; }
-
-  /* ── Root column inner layout ── */
-  #root-body {
-    padding: 25px 30px 72px 20px;
-  }
-
-  .note-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 200px;
-    gap: 32px;
-    align-items: start;
-  }
-
-  /* ── Stacked column topbar ── */
-  .stacked-topbar {
+  /* Trail topbar */
+  .trail-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 20px 10px;
+    padding: 12px 16px 10px;
     border-bottom: 1px solid var(--border);
     background: var(--bg-surface);
     gap: 8px;
@@ -837,7 +849,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     top: 0;
     z-index: 10;
   }
-  .stacked-note-title {
+  .trail-note-title {
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     font-weight: 600;
@@ -847,13 +859,13 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     white-space: nowrap;
     flex: 1;
   }
-  .stacked-topbar-actions {
+  .trail-topbar-actions {
     display: flex;
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
   }
-  .stacked-open-full {
+  .trail-open-full {
     font-size: 0.85rem;
     color: var(--text-muted);
     text-decoration: none;
@@ -861,12 +873,12 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     border-radius: 3px;
     transition: background var(--transition), color var(--transition);
   }
-  .stacked-open-full:hover {
+  .trail-open-full:hover {
     background: var(--border);
     color: var(--text-primary);
     text-decoration: none;
   }
-  .stacked-close-btn {
+  .trail-close-btn {
     background: none;
     border: none;
     font-size: 0.95rem;
@@ -877,66 +889,43 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     line-height: 1;
     transition: background var(--transition), color var(--transition);
   }
-  .stacked-close-btn:hover {
+  .trail-close-btn:hover {
     background: var(--border);
     color: var(--text-primary);
   }
 
-  /* Stacked column article padding */
-  .stacked-column .col-body > .note-article {
-    padding: 24px 24px 64px;
+  .trail-column .col-body > .note-article {
+    padding: 20px 20px 56px;
   }
-  .stacked-column .col-body > .note-article .note-title {
-    font-size: 1.5rem;
+  .trail-column .col-body > .note-article .note-title {
+    font-size: 1.35rem;
   }
 
-  /* ── Column animations ── */
-  @keyframes col-slide-in {
-    from { opacity: 0; transform: translateX(24px); }
-    to   { opacity: 1; transform: translateX(0); }
+  /* Loading / error */
+  .col-spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid var(--border);
+    border-top-color: var(--text-link);
+    border-radius: 50%;
+    animation: col-spin 0.8s linear infinite;
   }
+  @keyframes col-spin { to { transform: rotate(360deg); } }
+
   @keyframes col-slide-out {
     from { opacity: 1; }
     to   { opacity: 0; transform: translateX(24px); }
-  }
-  .col-entering {
-    animation: col-slide-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .col-leaving {
     animation: col-slide-out 0.25s ease both;
     pointer-events: none;
   }
 
-  /* Flash highlight (already-open note) */
-  @keyframes col-flash {
-    0%   { background: var(--bg); }
-    30%  { background: #fff3cd; }
-    100% { background: var(--bg); }
-  }
-  .note-column.flash {
-    animation: col-flash 0.7s ease;
-  }
-
-  /* Loading spinner */
-  .col-spinner {
-    width: 28px;
-    height: 28px;
-    border: 3px solid var(--border);
-    border-top-color: var(--text-link);
-    border-radius: 50%;
-    animation: col-spin 0.8s linear infinite;
-  }
-  @keyframes col-spin {
-    to { transform: rotate(360deg); }
-  }
-
   /* ══════════════════════════════════════
-     NOTE ARTICLE (shared styles)
+     NOTE ARTICLE (shared)
   ══════════════════════════════════════ */
   .note-article { min-width: 0; }
-
   .note-header { margin-bottom: var(--space-lg); }
-
   .note-meta {
     font-family: var(--font-sans);
     font-size: var(--text-sm);
@@ -947,11 +936,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     flex-wrap: wrap;
     margin-bottom: 10px;
   }
-  .meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
+  .meta-item { display: inline-flex; align-items: center; gap: 6px; }
   .meta-sep { color: var(--text-muted); opacity: 0.5; user-select: none; }
   .meta-label {
     text-transform: uppercase;
@@ -960,7 +945,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     letter-spacing: 0.04em;
   }
   .note-category { color: var(--text-secondary); font-weight: 500; }
-
   .note-title {
     font-size: 1.95rem;
     line-height: 1.2;
@@ -1004,7 +988,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     font-size: 0.85rem;
     color: var(--text-muted);
   }
-
   .backlinks {
     margin-top: var(--space-xl);
     padding: var(--space-md) var(--space-lg);
@@ -1054,7 +1037,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   }
 
   /* ══════════════════════════════════════
-     STICKY TABLE OF CONTENTS (inside root col)
+     STICKY TOC
   ══════════════════════════════════════ */
   .toc-sidebar {
     position: sticky;
@@ -1140,14 +1123,14 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   .toc-bullet { color: var(--text-muted); font-weight: bold; user-select: none; font-size: 0.85em; }
 
   /* ══════════════════════════════════════
-     EXTERNAL LINK PANEL
+     EXTERNAL LINK PANEL (OG card)
   ══════════════════════════════════════ */
   .ext-panel {
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
-    width: min(520px, 90vw);
+    width: min(460px, 92vw);
     background: var(--bg);
     border-left: 1px solid var(--border);
     box-shadow: -6px 0 24px rgba(0, 0, 0, 0.1);
@@ -1158,10 +1141,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     z-index: 2000;
     overflow: hidden;
   }
-  .ext-panel.open {
-    transform: translateX(0);
-  }
-
+  .ext-panel.open { transform: translateX(0); }
   .ext-panel-header {
     display: flex;
     align-items: center;
@@ -1178,7 +1158,10 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     gap: 6px;
     min-width: 0;
   }
-  .ext-panel-icon { color: var(--text-muted); font-size: 0.9rem; }
+  .ext-favicon {
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
   .ext-panel-hostname {
     font-family: var(--font-sans);
     font-size: var(--text-sm);
@@ -1188,12 +1171,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .ext-panel-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
+  .ext-panel-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .ext-newtab-btn {
     font-family: var(--font-sans);
     font-size: var(--text-xs);
@@ -1224,58 +1202,67 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   }
   .ext-panel-close:hover { background: var(--border); color: var(--text-primary); }
 
-  .ext-panel-url-bar {
-    padding: 6px 16px;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-shrink: 0;
-  }
-
   .ext-panel-body {
     flex: 1;
-    position: relative;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .ext-loading {
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    padding: 24px 0;
+  }
+  .ext-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     overflow: hidden;
+    background: var(--bg-surface);
   }
-  .ext-iframe {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border: none;
-  }
-
-  .ext-blocked {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    height: 100%;
-    padding: 40px 32px;
-    text-align: center;
-  }
-  .ext-blocked-icon { font-size: 2rem; }
-  .ext-blocked-title {
+  .ext-card-image-wrap { max-height: 220px; overflow: hidden; }
+  .ext-card-image { width: 100%; height: auto; display: block; object-fit: cover; max-height: 220px; }
+  .ext-card-content { padding: 14px 16px; }
+  .ext-card-title {
     font-family: var(--font-sans);
     font-size: var(--text-base);
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0;
+    margin: 0 0 6px;
+    line-height: 1.3;
   }
-  .ext-blocked-desc {
+  .ext-card-desc {
     font-family: var(--font-sans);
     font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+    line-height: 1.5;
+  }
+  .ext-card-url-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ext-card-favicon { border-radius: 2px; flex-shrink: 0; }
+  .ext-card-url {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
     color: var(--text-muted);
-    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ext-fallback {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+  }
+  .ext-fallback-text {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    margin-bottom: 16px;
   }
   .ext-open-btn {
     display: inline-block;
-    margin-top: 4px;
     padding: 8px 20px;
     background: var(--text-primary);
     color: #fff;
@@ -1289,7 +1276,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   .ext-open-btn:hover { opacity: 0.85; text-decoration: none; color: #fff; }
 
   /* ══════════════════════════════════════
-     MOBILE (≤768px): disable stacking
+     MOBILE (≤768px): no stacking; normal nav
   ══════════════════════════════════════ */
   @media (max-width: 768px) {
     .desktop-only { display: none !important; }
@@ -1307,33 +1294,16 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       line-height: 1.3;
     }
 
-    /* Un-stack: single column, body scrolls normally */
-    .notes-stack-outer {
-      overflow-x: visible;
-      overflow-y: visible;
-      height: auto;
-      display: block;
-    }
-    .notes-stack { display: block; }
-    .note-column {
-      width: 100% !important;
-      height: auto !important;
-      border-right: none;
-      overflow: visible;
-    }
-    .col-collapse-btn { display: none; }
+    /* Un-stack everything */
+    .notes-stack-outer { max-width: 100%; }
+    #trail-columns { display: none !important; }
+    .note-column { width: 100% !important; height: auto !important; border-right: none; overflow: visible; }
+    .col-collapse-btn { display: none !important; }
     .col-body { overflow: visible; height: auto; }
-    #root-body {
-      padding: var(--space-md) var(--space-md) var(--space-xl);
-    }
-    .note-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-    /* Hide stacked columns on mobile */
-    #stacked-columns { display: none; }
+    #root-body { padding: var(--space-md) var(--space-md) var(--space-xl); }
+    .note-grid { grid-template-columns: 1fr; gap: 20px; }
 
-    /* ── Mobile Backdrop Overlay ── */
+    /* Mobile TOC drawer */
     .toc-backdrop {
       display: block;
       position: fixed;
@@ -1346,8 +1316,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       transition: opacity 0.25s ease, visibility 0.25s ease;
     }
     .toc-backdrop.open { opacity: 1; visibility: visible; }
-
-    /* ── Mobile Full-Screen TOC Drawer ── */
     .toc-sidebar {
       position: fixed !important;
       inset: 0 !important;
@@ -1414,7 +1382,6 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     .toc-list { gap: 6px; }
     .toc-link { padding: 6px 0; font-size: var(--text-base); line-height: 1.45; }
 
-    /* External panel full-screen on mobile */
     .ext-panel { width: 100vw; }
   }
 </style>

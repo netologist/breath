@@ -1,0 +1,16 @@
+{
+  "https://notes.andymatuschak.org": {
+    "url": "https://notes.andymatuschak.org",
+    "title": "About these notes",
+    "description": null,
+    "image": null,
+    "favicon": null
+  },
+  "https://github.com/netologist/breath": {
+    "url": "https://github.com/netologist/breath",
+    "title": "GitHub - netologist/breath: 🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro",
+    "description": "🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro - netologist/breath",
+    "image": "https://opengraph.githubassets.com/c3ef626e0460c041b1d8a9f1f5c5df4730c96eac24afdfbbeb164a73396e8f33/netologist/breath",
+    "favicon": "https://github.githubassets.com/favicons/favicon.svg"
+  }
+}

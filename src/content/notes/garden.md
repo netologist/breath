@@ -23,4 +23,4 @@ Ideas in this space grow organically:
 - [[good-names-are-cheap-documentation|Good Names Are Cheap Documentation]]: Naming is the highest ROI design activity in codebases.
 - [[preventing-goroutine-leaks|Preventing Goroutine Leaks]]: Practical patterns for managing concurrent worker lifecycles.
 
-> *"A garden is never finished. It is tended, re-arranged, pruned, and allowed to grow over time."*
+For a deep dive into the philosophy behind this approach, see [Andy Matuschak's evergreen notes](https://notes.andymatuschak.org) and the [source code of this site](https://github.com/netologist/breath).
