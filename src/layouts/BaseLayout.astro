@@ -109,6 +109,7 @@ const rssUrl = url('/rss.xml');
     const ownHost = window.location.host;
     document.querySelectorAll('a[href]').forEach((a) => {
       if (a.classList.contains('ext-link') || a.classList.contains('embed-link')) return;
+      if (a.closest('.sidebar-social') || a.closest('.no-ext-icon') || a.classList.contains('no-ext-icon')) return;
       const href = a.getAttribute('href') || '';
       if (!/^https?:\/\//.test(href)) return;
       if (a.hasAttribute('data-astro-prefetch') || a.hasAttribute('data-astro-transition')) return;
@@ -226,10 +227,11 @@ const rssUrl = url('/rss.xml');
     if (!href || href.startsWith('#') || href.startsWith('mailto:')) return;
     // Panel's own buttons must navigate normally
     if (a.id === 'ext-newtab-btn' || a.id === 'ext-fallback-link' || a.classList.contains('ext-open-btn')) return;
+    // Sidebar social links: direct external navigation in new tab
+    if (a.closest('.sidebar-social') || a.closest('.no-ext-icon') || a.classList.contains('no-ext-icon')) return;
     // Embedded media links: default behavior (open in new tab / navigate)
     if (a.classList.contains('embed-link')) return;
     if (a.hasAttribute('data-astro-prefetch') || a.hasAttribute('data-astro-transition')) return;
-
     // External link → OG preview panel
     if (/^https?:\/\//.test(href)) {
       try {
@@ -288,6 +290,12 @@ const rssUrl = url('/rss.xml');
     color: var(--text-link);
     transform: translate(1px, -1px);
   }
+  .sidebar-social a::after,
+  .no-ext-icon::after {
+    content: none !important;
+    display: none !important;
+  }
+
 
   /* ══════════════════════════════════════
      EXTERNAL LINK PANEL (OG card)

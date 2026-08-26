@@ -148,7 +148,7 @@ const isActive = (href: string) =>
       ))}
       <li class="source-item">
         <a href={sourceLink.href} class="source-link" target="_blank" rel="noopener">
-          {sourceLink.label} ↗
+          {sourceLink.label}
         </a>
       </li>
     </ul>
@@ -283,6 +283,10 @@ const isActive = (href: string) =>
     justify-content: center;
     color: var(--text-muted);
     transition: color var(--transition);
+  }
+  .sidebar-social a::after {
+    display: none !important;
+    content: none !important;
   }
   .sidebar-social a:hover { color: var(--text-link); text-decoration: none; }
   .sidebar-social svg {
