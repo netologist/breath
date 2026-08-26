@@ -2,19 +2,20 @@
  * rehype-embeds — build-time media embeds for standalone platform links.
  *
  * Transforms a markdown paragraph whose ENTIRE content is a single link to a
- * supported platform (YouTube, X/Twitter) into an embed block:
+ * supported platform (YouTube, X/Twitter) directly into an embed block:
  *
  *   https://www.youtube.com/watch?v=abc123
  *
  * becomes
  *
- *   <a href="https://www.youtube.com/watch?v=abc123" class="embed-link">…</a>
  *   <div class="embed-wrap embed-youtube">
  *     <iframe src="https://www.youtube-nocookie.com/embed/abc123" …></iframe>
  *   </div>
  *
- * Inline links inside prose are untouched. The original link is preserved and
- * stays clickable beneath the embed (per ADR-002).
+ * The raw URL paragraph is replaced entirely, leaving no awkward duplicate
+ * text placeholder above the embed.
+ *
+ * Inline links inside prose sentences are untouched.
  */
 import { visit } from 'unist-util-visit';
 
@@ -43,16 +44,15 @@ export default function rehypeEmbeds() {
       const anchors = node.children.filter((c) => c.tagName === 'a');
       if (anchors.length !== 1) return;
 
+      // Ensure the link is the only significant content in the paragraph
       const a = anchors[0];
       const href = a.properties?.href;
       if (typeof href !== 'string') return;
 
       let embed = null;
-      let kind = null;
 
       const yt = youtubeId(href);
       if (yt) {
-        kind = 'youtube';
         embed = {
           type: 'element',
           tagName: 'div',
@@ -78,7 +78,6 @@ export default function rehypeEmbeds() {
       if (!embed) {
         const tweet = xTweetId(href);
         if (tweet) {
-          kind = 'x';
           embed = {
             type: 'element',
             tagName: 'div',
@@ -86,14 +85,19 @@ export default function rehypeEmbeds() {
             children: [
               {
                 type: 'element',
-                tagName: 'iframe',
+                tagName: 'blockquote',
                 properties: {
-                  src: `https://platform.twitter.com/embed/Tweet.html?id=${tweet}`,
-                  title: 'X (Twitter) post',
-                  loading: 'lazy',
-                  allowFullscreen: true,
+                  className: ['twitter-tweet'],
+                  'data-dnt': 'true',
                 },
-                children: [],
+                children: [
+                  {
+                    type: 'element',
+                    tagName: 'a',
+                    properties: { href },
+                    children: [{ type: 'text', value: href }],
+                  },
+                ],
               },
             ],
           };
@@ -102,13 +106,8 @@ export default function rehypeEmbeds() {
 
       if (!embed) return;
 
-      // Mark the anchor as an embedded link (JS/CSS will skip the ↗ arrow)
-      a.properties.className = [...(a.properties?.className ?? []), 'embed-link'];
-
-      // Insert the embed block right after the paragraph
-      parent.children.splice(index + 1, 0, embed);
-      // Track kind on the paragraph for CSS scoping
-      node.properties = { ...(node.properties ?? {}), className: [...(node.properties?.className ?? []), `embed-paragraph embed-${kind}`] };
+      // Replace the paragraph entirely with the embed element
+      parent.children.splice(index, 1, embed);
     });
   };
 }

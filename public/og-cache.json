@@ -11,7 +11,7 @@
     "url": "https://github.com/netologist/breath",
     "title": "GitHub - netologist/breath: 🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro",
     "description": "🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro - netologist/breath",
-    "image": "https://opengraph.githubassets.com/5e05e9067808cf5d7c33b8d75f7f516448ded443090682f7ff3a691974a099a8/netologist/breath",
+    "image": "https://opengraph.githubassets.com/d53591910c569a364d62bc4cacbc73ebdbf5f4df6631302ba007b0a00ef53b46/netologist/breath",
     "favicon": "https://github.githubassets.com/favicons/favicon.svg"
   },
   "https://astro.build": {
@@ -21,20 +21,26 @@
     "image": "https://astro.build/og/astro.jpg",
     "favicon": "https://astro.build/favicon.svg"
   },
-  "https://www.youtube.com/watch?v=dGctPzUSzQ0": {
-    "url": "https://www.youtube.com/watch?v=dGctPzUSzQ0",
+  "https://www.youtube.com/watch?v=ltP-8PXRqrw": {
+    "url": "https://www.youtube.com/watch?v=ltP-8PXRqrw",
     "title": null,
     "description": null,
     "image": null,
-    "favicon": "https://www.youtube.com/s/desktop/257ac8fb/img/favicon.ico"
+    "favicon": "https://www.youtube.com/s/desktop/ee8698c4/img/favicon.ico"
   },
-  "https://x.com/andy_matuschak/status/1438574028925181952": null,
-  "https://youtu.be/a7mXKzV_1sQ": {
-    "url": "https://youtu.be/a7mXKzV_1sQ",
+  "https://x.com/solomonstre/status/1111004913222324225": {
+    "url": "https://x.com/solomonstre/status/1111004913222324225",
+    "title": "Solomon Hykes (@solomonstre) on X",
+    "description": "If WASM+WASI existed in 2008, we wouldn&#x27;t have needed to created Docker. That&#x27;s how important it is. Webassembly on the server is the future of computing. A standardized system interface was the missing link. Let&#x27;s hope WASI is up to the task!",
+    "image": "https://pbs.twimg.com/profile_images/1481072550570381315/hMBPQ9K-_200x200.jpg",
+    "favicon": "https://x.com/favicon.ico"
+  },
+  "https://youtu.be/kCc8FmEb1nY": {
+    "url": "https://youtu.be/kCc8FmEb1nY",
     "title": null,
     "description": null,
     "image": null,
-    "favicon": "https://www.youtube.com/s/desktop/257ac8fb/img/favicon.ico"
+    "favicon": "https://www.youtube.com/s/desktop/ee8698c4/img/favicon.ico"
   },
   "https://notes.andymatuschak.org": {
     "url": "https://notes.andymatuschak.org",
@@ -49,5 +55,13 @@
     "description": "This is an introduction to Building a Second Brain, the proven method to organize your digital life and unlock your creative potential",
     "image": "https://fortelabs.com/wp-content/uploads/2019/02/01-BASB-Title-Card.png",
     "favicon": "https://fortelabs.com/wp-content/uploads/2020/02/cropped-cropped-Icon_Red-1-32x32.png"
-  }
+  },
+  "https://www.youtube.com/watch?v=dGctPzUSzQ0": {
+    "url": "https://www.youtube.com/watch?v=dGctPzUSzQ0",
+    "title": null,
+    "description": null,
+    "image": null,
+    "favicon": "https://www.youtube.com/s/desktop/ee8698c4/img/favicon.ico"
+  },
+  "https://x.com/andy_matuschak/status/1438574028925181952": null
 }

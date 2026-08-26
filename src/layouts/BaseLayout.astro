@@ -48,51 +48,32 @@ const rssUrl = url('/rss.xml');
       <slot />
     </div>
 
-    <!-- ═══ EXTERNAL LINK PREVIEW PANEL (OG metadata card, site-wide) ═══
-         See ADR-002. Owned by BaseLayout so every page gets the preview. -->
-    <div id="ext-panel" class="ext-panel" aria-hidden="true" aria-label="External link preview">
-      <div class="ext-panel-header">
-        <div class="ext-panel-meta">
-          <img id="ext-favicon" class="ext-favicon" src="" alt="" width="16" height="16" hidden />
-          <span class="ext-panel-hostname" id="ext-panel-hostname"></span>
+    <!-- ═══ EXTERNAL LINK HOVER POPOVER (OG metadata card) ═══
+         Non-intrusive floating card preview for external links in text. -->
+    <div id="ext-popover" class="ext-popover" aria-hidden="true" role="tooltip">
+      <a id="ext-popover-link" href="#" target="_blank" rel="noopener noreferrer" class="ext-popover-card">
+        <div class="ext-popover-image-wrap" id="ext-pop-image-wrap" hidden>
+          <img id="ext-pop-image" class="ext-popover-image" src="" alt="" loading="lazy" />
         </div>
-        <div class="ext-panel-actions">
-          <a id="ext-newtab-btn" href="#" target="_blank" rel="noopener noreferrer" class="ext-newtab-btn">
-            Open in New Tab ↗
-          </a>
-          <button id="ext-panel-close" class="ext-panel-close" aria-label="Close preview">✕</button>
-        </div>
-      </div>
-      <div class="ext-panel-body">
-        <div id="ext-loading" class="ext-loading">Loading link preview…</div>
-        <div id="ext-card" class="ext-card" hidden>
-          <div class="ext-card-image-wrap" id="ext-image-wrap" hidden>
-            <img id="ext-image" class="ext-card-image" src="" alt="" loading="lazy" />
+        <div class="ext-popover-content">
+          <div class="ext-popover-header">
+            <span class="ext-popover-fav-wrap" id="ext-pop-fav-wrap" hidden>
+              <img id="ext-pop-favicon" class="ext-popover-favicon" src="" alt="" width="14" height="14" />
+            </span>
+            <span class="ext-popover-hostname" id="ext-pop-hostname"></span>
+            <span class="ext-popover-arrow">↗</span>
           </div>
-          <div class="ext-card-content">
-            <h3 id="ext-title" class="ext-card-title"></h3>
-            <p id="ext-desc" class="ext-card-desc"></p>
-            <div class="ext-card-url-row">
-              <span class="ext-card-favicon" id="ext-card-favicon-wrap" hidden>
-                <img id="ext-card-favicon" src="" alt="" width="14" height="14" />
-              </span>
-              <span id="ext-url" class="ext-card-url"></span>
-            </div>
-          </div>
+          <h4 id="ext-pop-title" class="ext-popover-title"></h4>
+          <p id="ext-pop-desc" class="ext-popover-desc"></p>
         </div>
-        <div id="ext-fallback" class="ext-fallback" hidden>
-          <p class="ext-fallback-text">No preview metadata available.</p>
-          <a id="ext-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="ext-open-btn">
-            Open in New Tab ↗
-          </a>
-        </div>
-      </div>
+      </a>
     </div>
 
 <!-- ════════════════════════════════════════════════════════
-     SITE-WIDE LINK ENGINE (ADR-002)
-     - External link ↗ indicator
-     - OG metadata preview panel for external links
+     SITE-WIDE LINK & MEDIA ENGINE
+     - External link ↗ indicators + new tab target
+     - Non-intrusive hover preview popovers (OG metadata)
+     - Twitter / X widgets auto-loader
      ════════════════════════════════════════════════════════ -->
 <script>
 (function () {
@@ -100,54 +81,48 @@ const rssUrl = url('/rss.xml');
   const BASE = window.location.pathname.startsWith('/breath') ? '/breath' : '';
 
   // ──────────────────────────────────────────────────
-  // 1. External link ↗ indicator
-  //    Marks every outbound link with class "ext-link";
-  //    CSS renders the ↗ arrow via ::after.
-  //    Embedded media links (.embed-link) are excluded.
+  // 1. External link ↗ indicator & target="_blank"
   // ──────────────────────────────────────────────────
   function markExternalLinks() {
     const ownHost = window.location.host;
     document.querySelectorAll('a[href]').forEach((a) => {
       if (a.classList.contains('ext-link') || a.classList.contains('embed-link')) return;
       if (a.closest('.sidebar-social') || a.closest('.no-ext-icon') || a.classList.contains('no-ext-icon')) return;
+      if (a.closest('#ext-popover')) return;
       const href = a.getAttribute('href') || '';
       if (!/^https?:\/\//.test(href)) return;
       if (a.hasAttribute('data-astro-prefetch') || a.hasAttribute('data-astro-transition')) return;
-      // Skip panel-internal buttons
-      if (a.id === 'ext-newtab-btn' || a.id === 'ext-fallback-link') return;
       try {
         if (new URL(href).host === ownHost) return; // same-site absolute link
       } catch {
         return;
       }
       a.classList.add('ext-link');
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
     });
   }
 
-  // Expose for layouts that inject content after load (NoteLayout trail)
+  // Expose for layouts that inject content dynamically
   (window as any).__markExternalLinks = markExternalLinks;
 
   // ──────────────────────────────────────────────────
-  // 2. External link preview panel (OG metadata card)
+  // 2. External link hover popover (OG metadata card)
   // ──────────────────────────────────────────────────
-  const extPanel      = document.getElementById('ext-panel')!;
-  const extHostname   = document.getElementById('ext-panel-hostname')!;
-  const extNewtab     = document.getElementById('ext-newtab-btn') as HTMLAnchorElement;
-  const extClose      = document.getElementById('ext-panel-close')!;
-  const extLoading    = document.getElementById('ext-loading')!;
-  const extCard       = document.getElementById('ext-card')!;
-  const extTitle      = document.getElementById('ext-title')!;
-  const extDesc       = document.getElementById('ext-desc')!;
-  const extUrl        = document.getElementById('ext-url')!;
-  const extFavicon    = document.getElementById('ext-favicon') as HTMLImageElement;
-  const extImage      = document.getElementById('ext-image') as HTMLImageElement;
-  const extImageWrap  = document.getElementById('ext-image-wrap')!;
-  const extCardFav    = document.getElementById('ext-card-favicon') as HTMLImageElement;
-  const extCardFavW   = document.getElementById('ext-card-favicon-wrap')!;
-  const extFallback   = document.getElementById('ext-fallback')!;
-  const extFallbackLk = document.getElementById('ext-fallback-link') as HTMLAnchorElement;
+  const popover = document.getElementById('ext-popover');
+  const popoverLink = document.getElementById('ext-popover-link') as HTMLAnchorElement | null;
+  const popoverImgWrap = document.getElementById('ext-pop-image-wrap');
+  const popoverImg = document.getElementById('ext-pop-image') as HTMLImageElement | null;
+  const popoverFavWrap = document.getElementById('ext-pop-fav-wrap');
+  const popoverFav = document.getElementById('ext-pop-favicon') as HTMLImageElement | null;
+  const popoverHostname = document.getElementById('ext-pop-hostname');
+  const popoverTitle = document.getElementById('ext-pop-title');
+  const popoverDesc = document.getElementById('ext-pop-desc');
 
   let ogCache: Record<string, any> | null = null;
+  let showTimer: any = null;
+  let hideTimer: any = null;
+  let activeLink: HTMLElement | null = null;
 
   async function loadOgCache() {
     if (ogCache) return ogCache;
@@ -160,101 +135,145 @@ const rssUrl = url('/rss.xml');
     return ogCache;
   }
 
-  function showPanel() {
-    extPanel.setAttribute('aria-hidden', 'false');
-    extPanel.classList.add('open');
-    document.body.classList.add('ext-open');
+  function decodeHtml(html: string) {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
   }
 
-  function openExtPanel(href: string) {
+  function positionPopover(target: HTMLElement) {
+    if (!popover) return;
+    const rect = target.getBoundingClientRect();
+    const popWidth = Math.min(340, window.innerWidth - 24);
+    const popHeight = 220;
+
+    let left = rect.left + rect.width / 2 - popWidth / 2;
+    if (left + popWidth > window.innerWidth - 12) {
+      left = window.innerWidth - popWidth - 12;
+    }
+    if (left < 12) left = 12;
+
+    let top = rect.bottom + 8;
+    if (rect.bottom + popHeight > window.innerHeight && rect.top > popHeight) {
+      top = rect.top - popHeight - 8;
+    }
+
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+    popover.style.width = `${popWidth}px`;
+  }
+  function showPopover(link: HTMLElement, href: string) {
+    if (!popover || !popoverHostname || !popoverTitle || !popoverDesc || !popoverLink) return;
+    clearTimeout(hideTimer);
+    activeLink = link;
+
     let hostname = href;
     try { hostname = new URL(href).hostname; } catch {}
-    extHostname.textContent = hostname;
-    extNewtab.href = href;
-    extFallbackLk.href = href;
-    extFavicon.hidden = true;
-    extLoading.hidden = false;
-    extCard.hidden = true;
-    extFallback.hidden = true;
-    showPanel();
+    popoverHostname.textContent = hostname;
+    popoverLink.href = href;
 
     loadOgCache().then(cache => {
+      if (activeLink !== link) return;
       const meta = cache?.[href];
       if (meta && (meta.title || meta.description)) {
-        extLoading.hidden = true;
-        extCard.hidden = false;
-        extTitle.textContent = meta.title || hostname;
-        extDesc.textContent = meta.description || '';
-        extDesc.hidden = !meta.description;
-        extUrl.textContent = href.length > 80 ? href.slice(0, 80) + '…' : href;
-        if (meta.image) {
-          extImage.src = meta.image;
-          extImageWrap.hidden = false;
-        } else {
-          extImageWrap.hidden = true;
+        popoverTitle.textContent = meta.title ? decodeHtml(meta.title) : hostname;
+        popoverDesc.textContent = meta.description ? decodeHtml(meta.description) : '';
+        popoverDesc.hidden = !meta.description;
+        if (meta.image && popoverImg && popoverImgWrap) {
+          popoverImg.src = meta.image;
+          popoverImgWrap.hidden = false;
+        } else if (popoverImgWrap) {
+          popoverImgWrap.hidden = true;
         }
-        if (meta.favicon) {
-          extCardFav.src = meta.favicon;
-          extCardFavW.hidden = false;
-        } else {
-          extCardFavW.hidden = true;
+        if (meta.favicon && popoverFav && popoverFavWrap) {
+          popoverFav.src = meta.favicon;
+          popoverFavWrap.hidden = false;
+        } else if (popoverFavWrap) {
+          popoverFavWrap.hidden = true;
         }
       } else {
-        extLoading.hidden = true;
-        extFallback.hidden = false;
+        popoverTitle.textContent = hostname;
+        popoverDesc.textContent = href;
+        popoverDesc.hidden = false;
+        if (popoverImgWrap) popoverImgWrap.hidden = true;
+        if (popoverFavWrap) popoverFavWrap.hidden = true;
       }
+      positionPopover(link);
+      popover.classList.add('visible');
+      popover.setAttribute('aria-hidden', 'false');
     });
   }
 
-  function closeExtPanel() {
-    extPanel.classList.remove('open');
-    extPanel.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('ext-open');
+  function hidePopover() {
+    if (!popover) return;
+    popover.classList.remove('visible');
+    popover.setAttribute('aria-hidden', 'true');
+    activeLink = null;
   }
 
-  extClose.addEventListener('click', closeExtPanel);
-
-  // ──────────────────────────────────────────────────
-  // Link click interception (capture phase, runs before
-  // ClientRouter and before NoteLayout's re-root handler).
-  // External links → preview panel; everything else passes through.
-  // ──────────────────────────────────────────────────
-  document.addEventListener('click', (e: MouseEvent) => {
-    if (window.innerWidth <= 768) return; // mobile: normal navigation
+  document.addEventListener('mouseover', (e: MouseEvent) => {
+    if (window.innerWidth <= 768) return;
     const a = (e.target as HTMLElement).closest('a');
     if (!a) return;
+    if (a.closest('.sidebar-social') || a.closest('#sidebar')) return;
+    if (a.closest('#ext-popover')) return;
     const href = a.getAttribute('href') || '';
-    if (!href || href.startsWith('#') || href.startsWith('mailto:')) return;
-    // Panel's own buttons must navigate normally
-    if (a.id === 'ext-newtab-btn' || a.id === 'ext-fallback-link' || a.classList.contains('ext-open-btn')) return;
-    // Sidebar social links: direct external navigation in new tab
-    if (a.closest('.sidebar-social') || a.closest('.no-ext-icon') || a.classList.contains('no-ext-icon')) return;
-    // Embedded media links: default behavior (open in new tab / navigate)
-    if (a.classList.contains('embed-link')) return;
-    if (a.hasAttribute('data-astro-prefetch') || a.hasAttribute('data-astro-transition')) return;
-    // External link → OG preview panel
-    if (/^https?:\/\//.test(href)) {
-      try {
-        if (new URL(href).host === window.location.host) return; // same-site
-      } catch {
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      openExtPanel(href);
-    }
-  }, true);
+    if (!/^https?:\/\//.test(href)) return;
+    try {
+      if (new URL(href).host === window.location.host) return;
+    } catch { return; }
 
-  // ── Keyboard: Escape closes the panel ──
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && extPanel.classList.contains('open')) {
-      closeExtPanel();
-    }
+    clearTimeout(hideTimer);
+    clearTimeout(showTimer);
+    showTimer = setTimeout(() => {
+      showPopover(a, href);
+    }, 150);
   });
 
-  // ── Boot: mark links + attach after every navigation ──
+  document.addEventListener('mouseout', (e: MouseEvent) => {
+    const related = e.relatedTarget as HTMLElement | null;
+    if (related && (related.closest('#ext-popover') || related.closest('a') === activeLink)) {
+      return;
+    }
+    clearTimeout(showTimer);
+    hideTimer = setTimeout(() => {
+      hidePopover();
+    }, 180);
+  });
+
+  popover?.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimer);
+  });
+
+  popover?.addEventListener('mouseleave', () => {
+    clearTimeout(showTimer);
+    hideTimer = setTimeout(() => {
+      hidePopover();
+    }, 180);
+  });
+
+  // ──────────────────────────────────────────────────
+  // 3. Twitter / X widget loader
+  // ──────────────────────────────────────────────────
+  function loadTwitterWidgets() {
+    if (!document.querySelector('.twitter-tweet')) return;
+    if ((window as any).twttr?.widgets) {
+      (window as any).twttr.widgets.load();
+      return;
+    }
+    if (document.getElementById('twitter-wjs')) return;
+    const script = document.createElement('script');
+    script.id = 'twitter-wjs';
+    script.src = 'https://platform.twitter.com/widgets.js';
+    script.async = true;
+    script.charset = 'utf-8';
+    document.head.appendChild(script);
+  }
+
+  // ── Boot ──
   function boot() {
     markExternalLinks();
+    loadTwitterWidgets();
   }
   boot();
   document.addEventListener('astro:page-load', () => boot());
@@ -263,181 +282,142 @@ const rssUrl = url('/rss.xml');
   </body>
 </html>
 
-
-
-<!-- Body lock while preview panel is open -->
 <style is:global>
-  body.ext-open {
-    overflow: hidden;
-    height: 100dvh;
-  }
-</style>
-
-<style is:global>
-  /* External link ↗ indicator */
-  .ext-link::after {
-    content: '↗';
+  /* ══════════════════════════════════════
+     EXTERNAL LINK ↗ INDICATOR
+  ══════════════════════════════════════ */
+  a.ext-link::after {
+    content: " ↗";
+    font-size: 0.8em;
+    line-height: 1;
     display: inline-block;
-    margin-left: 2px;
-    font-size: 0.72em;
-    vertical-align: super;
-    color: var(--text-muted);
-    opacity: 0.7;
+    opacity: 0.65;
     transition: opacity var(--transition), transform var(--transition);
+    vertical-align: super;
   }
-  .ext-link:hover::after {
+  a.ext-link:hover::after {
     opacity: 1;
-    color: var(--text-link);
     transform: translate(1px, -1px);
   }
-  .sidebar-social a::after,
-  .no-ext-icon::after {
-    content: none !important;
-    display: none !important;
-  }
 
+  /* Exclusions */
+  .no-ext-icon a::after,
+  a.no-ext-icon::after,
+  .sidebar-social a::after,
+  .ext-popover a::after {
+    display: none !important;
+    content: none !important;
+  }
 
   /* ══════════════════════════════════════
-     EXTERNAL LINK PANEL (OG card)
+     EXTERNAL LINK HOVER POPOVER CARD
   ══════════════════════════════════════ */
-  .ext-panel {
+  .ext-popover {
     position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(460px, 92vw);
+    z-index: 3000;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.15));
+  }
+  .ext-popover.visible {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .ext-popover-card {
+    display: block;
     background: var(--bg);
-    border-left: 1px solid var(--border);
-    box-shadow: -6px 0 24px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 2000;
-    overflow: hidden;
-  }
-  .ext-panel.open { transform: translateX(0); }
-  .ext-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-surface);
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .ext-panel-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
-  .ext-favicon { border-radius: 2px; flex-shrink: 0; }
-  .ext-panel-hostname {
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .ext-panel-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  .ext-newtab-btn {
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    color: var(--text-link);
-    text-decoration: none;
-    font-weight: 500;
-    padding: 3px 8px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    transition: background var(--transition), border-color var(--transition);
-    white-space: nowrap;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color var(--transition);
   }
-  .ext-newtab-btn:hover {
-    background: var(--bg-surface);
+  .ext-popover-card:hover {
     border-color: var(--border-hover);
     text-decoration: none;
   }
-  .ext-panel-close {
-    background: none;
-    border: none;
-    font-size: 1rem;
-    cursor: pointer;
-    color: var(--text-muted);
-    padding: 4px 6px;
-    border-radius: 3px;
-    line-height: 1;
-    transition: background var(--transition), color var(--transition);
-  }
-  .ext-panel-close:hover { background: var(--border); color: var(--text-primary); }
 
-  .ext-panel-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-  }
-  .ext-loading {
-    color: var(--text-muted);
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    padding: 24px 0;
-  }
-  .ext-card {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
+  .ext-popover-image-wrap {
+    width: 100%;
+    height: 120px;
     background: var(--bg-surface);
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
   }
-  .ext-card-image-wrap { max-height: 220px; overflow: hidden; }
-  .ext-card-image { width: 100%; height: auto; display: block; object-fit: cover; max-height: 220px; }
-  .ext-card-content { padding: 14px 16px; }
-  .ext-card-title {
+  .ext-popover-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .ext-popover-content {
+    padding: 10px 12px;
+  }
+  .ext-popover-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .ext-popover-fav-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .ext-popover-favicon {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+  }
+  .ext-popover-hostname {
     font-family: var(--font-sans);
-    font-size: var(--text-base);
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0 0 6px;
-    line-height: 1.3;
-  }
-  .ext-card-desc {
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    margin: 0 0 10px;
-    line-height: 1.5;
-  }
-  .ext-card-url-row { display: flex; align-items: center; gap: 6px; }
-  .ext-card-favicon { border-radius: 2px; flex-shrink: 0; }
-  .ext-card-url {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: var(--text-xs);
     color: var(--text-muted);
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
   }
-  .ext-fallback { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
-  .ext-fallback-text {
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    margin-bottom: 16px;
+  .ext-popover-arrow {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    flex-shrink: 0;
   }
-  .ext-open-btn {
-    display: inline-block;
-    padding: 8px 20px;
-    background: var(--text-primary);
-    color: #fff;
+
+  .ext-popover-title {
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     font-weight: 600;
-    border-radius: var(--radius);
-    text-decoration: none;
-    transition: opacity var(--transition);
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin: 0 0 4px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  .ext-open-btn:hover { opacity: 0.85; text-decoration: none; color: #fff; }
+  .ext-popover-card:hover .ext-popover-title {
+    color: var(--text-link);
+  }
+
+  .ext-popover-desc {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 
   /* ══════════════════════════════════════
      MEDIA EMBEDS (rehype-embeds, ADR-002)
@@ -449,9 +429,10 @@ const rssUrl = url('/rss.xml');
   }
   .embed-youtube {
     aspect-ratio: 16 / 9;
-    border-radius: 4px;
+    border-radius: 6px;
     overflow: hidden;
     border: 1px solid var(--border);
+    background: var(--bg-surface);
   }
   .embed-youtube iframe {
     width: 100%;
@@ -459,30 +440,18 @@ const rssUrl = url('/rss.xml');
     border: none;
     display: block;
   }
-  .embed-x iframe {
+
+  .embed-x {
+    display: flex;
+    justify-content: center;
     width: 100%;
-    min-height: 400px;
-    border: none;
-    border-radius: 4px;
-    background: var(--bg-surface);
+    margin: var(--space-lg) 0;
   }
-  /* The paragraph holding a standalone embed link — no bottom margin so the
-     embed below it sits tight. */
-  .embed-paragraph {
-    margin-bottom: 0 !important;
-  }
-  .embed-link {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    word-break: break-all;
-  }
-  .embed-link:hover {
-    color: var(--text-link);
+  .embed-x .twitter-tweet {
+    margin: 0 auto !important;
   }
 
   @media (max-width: 768px) {
-    .ext-panel { width: 100vw; }
-    .embed-x iframe { min-height: 320px; }
+    .ext-popover { display: none !important; }
   }
 </style>
