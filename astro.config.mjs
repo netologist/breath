@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import { remarkWikilinks } from './src/plugins/remark-wikilinks.mjs';
+import rehypeEmbeds from './src/plugins/rehype-embeds.mjs';
 
 export default defineConfig({
   site: process.env.SITE_URL || 'https://netologist.github.io',
@@ -8,6 +9,7 @@ export default defineConfig({
   integrations: [mdx()],
   markdown: {
     remarkPlugins: [remarkWikilinks],
+    rehypePlugins: [rehypeEmbeds],
     shikiConfig: {
       theme: 'github-light',
       wrap: true,

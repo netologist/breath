@@ -27,4 +27,18 @@ A **Digital Garden** takes the opposite approach. It is an evolving workspace de
 2. **Interactive Note Drawers:** Preview linked notes in Andy Matuschak-style slide-over panels without losing reading context.
 3. **Maturity Badges:** Visually distinguish between raw sparks and battle-tested evergreen principles.
 
-Explore the live garden at [[garden|Digital Garden Index]].
+## In Practice
+
+Andy Matuschak talks about this exact philosophy in his 2022 talk on working with evergreen notes:
+
+https://www.youtube.com/watch?v=dGctPzUSzQ0
+
+A useful conversation on the subject from X:
+
+https://x.com/andy_matuschak/status/1438574028925181952
+
+### Further Reading
+
+The concept was popularized by [Maggie Appleton's essay on digital gardens](https://maggieappleton.com/garden-history), and the [Evergreen note-writing approach](https://notes.andymatuschak.org/z4SDCZQeRo4xFEQHJH9j4Q) is documented in detail by Andy Matuschak. For the tooling behind this site, check out the [Breath source code](https://github.com/netologist/breath) and the [Astro framework](https://astro.build). A second video walkthrough of the same ideas is embedded below:
+
+https://youtu.be/a7mXKzV_1sQ

@@ -23,4 +23,10 @@ Ideas in this space grow organically:
 - [[good-names-are-cheap-documentation|Good Names Are Cheap Documentation]]: Naming is the highest ROI design activity in codebases.
 - [[preventing-goroutine-leaks|Preventing Goroutine Leaks]]: Practical patterns for managing concurrent worker lifecycles.
 
-For a deep dive into the philosophy behind this approach, see [Andy Matuschak's evergreen notes](https://notes.andymatuschak.org) and the [source code of this site](https://github.com/netologist/breath).
+For a deep dive into the philosophy behind this approach, see [Andy Matuschak's evergreen notes](https://notes.andymatuschak.org) and the [source code of this site](https://github.com/netologist/breath). The concept of a "second brain" was also covered by [Tiago Forte's Building a Second Brain](https://fortelabs.com/blog/basboverview/) and in this explainer video:
+
+https://www.youtube.com/watch?v=dGctPzUSzQ0
+
+And a short thread worth reading:
+
+https://x.com/andy_matuschak/status/1438574028925181952

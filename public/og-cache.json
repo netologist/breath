@@ -1,4 +1,41 @@
 {
+  "https://maggieappleton.com/garden-history": {
+    "url": "https://maggieappleton.com/garden-history",
+    "title": "A Brief History &#38; Ethos of the Digital Garden",
+    "description": "A newly revived philosophy for publishing personal knowledge on the web",
+    "image": "https://maggieappleton.com/og/garden-history.png",
+    "favicon": "https://maggieappleton.com/images/favicon/favicon-32x32.png"
+  },
+  "https://notes.andymatuschak.org/z4SDCZQeRo4xFEQHJH9j4Q": null,
+  "https://github.com/netologist/breath": {
+    "url": "https://github.com/netologist/breath",
+    "title": "GitHub - netologist/breath: 🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro",
+    "description": "🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro - netologist/breath",
+    "image": "https://opengraph.githubassets.com/69e2528f386afafe31a931bd2cc0748920cca9d587b69e9d19a4784fb47eab70/netologist/breath",
+    "favicon": "https://github.githubassets.com/favicons/favicon.svg"
+  },
+  "https://astro.build": {
+    "url": "https://astro.build",
+    "title": "Astro",
+    "description": "Astro builds fast content sites, powerful web applications, dynamic server APIs, and everything in-between.",
+    "image": "https://astro.build/og/astro.jpg",
+    "favicon": "https://astro.build/favicon.svg"
+  },
+  "https://www.youtube.com/watch?v=dGctPzUSzQ0": {
+    "url": "https://www.youtube.com/watch?v=dGctPzUSzQ0",
+    "title": null,
+    "description": null,
+    "image": null,
+    "favicon": "https://www.youtube.com/s/desktop/257ac8fb/img/favicon.ico"
+  },
+  "https://x.com/andy_matuschak/status/1438574028925181952": null,
+  "https://youtu.be/a7mXKzV_1sQ": {
+    "url": "https://youtu.be/a7mXKzV_1sQ",
+    "title": null,
+    "description": null,
+    "image": null,
+    "favicon": "https://www.youtube.com/s/desktop/257ac8fb/img/favicon.ico"
+  },
   "https://notes.andymatuschak.org": {
     "url": "https://notes.andymatuschak.org",
     "title": "About these notes",
@@ -6,11 +43,11 @@
     "image": null,
     "favicon": null
   },
-  "https://github.com/netologist/breath": {
-    "url": "https://github.com/netologist/breath",
-    "title": "GitHub - netologist/breath: 🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro",
-    "description": "🌿 Breath — Minimalist Digital Garden &amp; Engineering Blog theme for Astro - netologist/breath",
-    "image": "https://opengraph.githubassets.com/c3ef626e0460c041b1d8a9f1f5c5df4730c96eac24afdfbbeb164a73396e8f33/netologist/breath",
-    "favicon": "https://github.githubassets.com/favicons/favicon.svg"
+  "https://fortelabs.com/blog/basboverview/": {
+    "url": "https://fortelabs.com/blog/basboverview/",
+    "title": "Building a Second Brain: The Definitive Introductory Guide",
+    "description": "This is an introduction to Building a Second Brain, the proven method to organize your digital life and unlock your creative potential",
+    "image": "https://fortelabs.com/wp-content/uploads/2019/02/01-BASB-Title-Card.png",
+    "favicon": "https://fortelabs.com/wp-content/uploads/2020/02/cropped-cropped-Icon_Red-1-32x32.png"
   }
 }
