@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
 import { url } from '../../utils/url';
 import { formatYMD, getEffectiveDate, sortByDate } from '../../utils/date';
-import { isPrivateNote } from '../../utils/notes';
+import { isPrivateNote, stageLabel, stageCls } from '../../utils/notes';
 
 export async function getStaticPaths() {
   const allPosts = await getCollection('blog', ({ data }) => !data.draft);
@@ -31,9 +31,6 @@ export async function getStaticPaths() {
 }
 
 const { category, posts, notes } = Astro.props;
-
-const stageLabel = { seedling: '🌱 Seedling', budding: '🌿 Budding', evergreen: '🌲 Evergreen' };
-const stageCls   = { seedling: 'stage-seedling', budding: 'stage-budding', evergreen: 'stage-evergreen' };
 
 
 ---

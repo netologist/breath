@@ -121,3 +121,32 @@ curl -u admin:changeme -I https://your-site.pages.dev/notes/private/example-capt
   enforcement boundary. Keep your Git repo **private** as a second layer.
 - GitHub Pages cannot enforce auth — a private note deployed only to GitHub
   Pages is public. Use Cloudflare (or delete the private content) there.
+
+## 6. Captured Notes & PARA Content Model (ADR-006)
+
+Breath supports an AI-assisted research workflow:
+
+1. **Capture:** Raw notes land in `content/notes/private/` with `stage: captured`, `para` (`projects | areas | resources | archives`), and `source` provenance.
+2. **Organize:** Notes are connected via `[[wikilinks]]` across related private/public notes.
+3. **Distill:** Authors refine raw captures into concise `seedling` or `budding` notes.
+4. **Express:** Mature concepts reach `evergreen` notes or full blog posts.
+
+```markdown
+---
+title: "Research on Distributed Consensus"
+stage: captured
+para: resources
+source: "Claude 3.7 research session"
+tags: ["consensus", "architecture"]
+created: 2026-08-27
+private: true
+---
+```
+
+## 7. LLM-Wiki & Local Graphify Workflow (ADR-007)
+
+To let AI coding assistants query and synthesize ideas across your entire garden:
+
+1. **Generate the graph locally:** Run `/graphify` in your workspace to build `graphify-out/`.
+2. **Privacy boundary:** `graphify-out/` is gitignored and is NEVER deployed with the static site. It includes private and captured notes for local AI query fidelity without risking public data leakage.
+3. **Build warnings:** If a public note accidentally links to a private note, Astro's build process logs an advisory warning so you can remove or refactor the link before deploying.

@@ -1,6 +1,7 @@
 import { visit } from 'unist-util-visit';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { notesDirPath } from '../utils/content-dir.mjs';
 
 const base = (process.env.BASE_PATH || (process.env.GITHUB_ACTIONS ? '/breath' : '')).replace(/\/$/, '');
 
@@ -14,52 +15,87 @@ function slugify(str) {
     .replace(/^-|-$/g, '');
 }
 
+/** Recursively collects all markdown files under a directory */
+function scanFilesRecursively(dir, baseDir = dir, results = []) {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return results;
+  }
+
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      scanFilesRecursively(fullPath, baseDir, results);
+    } else if (entry.isFile() && /\.mdx?$/.test(entry.name)) {
+      const relPath = relative(baseDir, fullPath).replace(/\\/g, '/');
+      const id = relPath.replace(/\.mdx?$/, '');
+      results.push({ fullPath, id, fileName: entry.name });
+    }
+  }
+
+  return results;
+}
+
 /**
- * Scans the notes directory and builds a lookup map: { title/id -> id }
- * Supports linking via note ID, title, or alias.
+ * Scans the notes directory recursively and builds note metadata & lookup maps:
+ * lookupMap: { title/id -> noteId }
+ * noteInfo: { noteId -> { isPrivate: boolean, title: string } }
  */
 function buildNoteMap() {
   const map = {};
-  const dir = join(process.cwd(), 'src/content/notes');
-
-  let files;
-  try {
-    files = readdirSync(dir);
-  } catch {
-    return map;
-  }
+  const noteInfo = {};
+  const files = scanFilesRecursively(notesDirPath);
 
   for (const file of files) {
-    if (!/\.mdx?$/.test(file)) continue;
-    const id = file.replace(/\.mdx?$/, '');
-
-    map[id] = id;
-    map[slugify(id)] = id;
+    const { id, fullPath } = file;
+    let isPrivate = id.startsWith('private/');
+    let title = id;
 
     try {
-      const raw = readFileSync(join(dir, file), 'utf8');
+      const raw = readFileSync(fullPath, 'utf8');
+      if (/private:\s*true/i.test(raw) || /stage:\s*["']?captured["']?/i.test(raw)) {
+        isPrivate = true;
+      }
       const titleMatch = raw.match(/^title:\s*["']?(.+?)["']?\s*$/m);
       if (titleMatch) {
-        const title = titleMatch[1].trim();
+        title = titleMatch[1].trim();
         map[title.toLowerCase()] = id;
         map[slugify(title)] = id;
       }
     } catch {
-      // Fallback to filename ID if read fails
+      // Fallback
     }
+
+    map[id] = id;
+    map[slugify(id)] = id;
+
+    // Also support short filename (e.g. [[example-capture]] linking to private/example-capture)
+    const baseName = id.split('/').pop();
+    if (baseName && !map[baseName]) {
+      map[baseName] = id;
+      map[slugify(baseName)] = id;
+    }
+
+    noteInfo[id] = { isPrivate, title };
   }
 
-  return map;
+  return { map, noteInfo };
 }
 
 /**
  * Remark plugin: [[target]] and [[target|custom label]] -> <a href="/breath/notes/id">label</a>
+ * Emits build warnings when public content links to private or captured notes.
  */
 export function remarkWikilinks() {
-  const noteMap = buildNoteMap();
+  const { map: noteMap, noteInfo } = buildNoteMap();
   const WIKILINK_RE = /\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g;
 
-  return (tree) => {
+  return (tree, file) => {
+    const filePath = file?.history?.[0] || file?.path || '';
+    const isSourcePrivate = filePath.includes('/notes/private/') || (typeof file?.value === 'string' && (/private:\s*true/i.test(file.value) || /stage:\s*["']?captured["']?/i.test(file.value)));
+
     visit(tree, 'text', (node, index, parent) => {
       if (!parent || !node.value.includes('[[')) return;
 
@@ -82,6 +118,11 @@ export function remarkWikilinks() {
           noteMap[rawTarget.toLowerCase()] ??
           noteMap[slugify(rawTarget)] ??
           slugify(rawTarget);
+
+        const targetInfo = noteInfo[id];
+        if (!isSourcePrivate && targetInfo?.isPrivate) {
+          console.warn(`[wikilinks] Warning: Public content "${filePath || 'note'}" links to private/captured note "${id}".`);
+        }
 
         parts.push({
           type: 'link',

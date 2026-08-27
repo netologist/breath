@@ -34,6 +34,7 @@
   --border:      #e4e4e0;
   --border-hover:#c8c8c2;
 
+  --accent-captured:  #7c5cbf;
   --accent-seedling:  #5a9e5a;
   --accent-budding:   #c98a20;
   --accent-evergreen: #2e6e4a;
@@ -295,6 +296,7 @@ h2.page-title {
   border-radius: 2px;
   line-height: 1.4;
 }
+.stage-captured  { background: #f6f2fb; color: var(--accent-captured); }
 .stage-seedling  { background: #f0f8f0; color: var(--accent-seedling); }
 .stage-budding   { background: #fdf6e8; color: var(--accent-budding); }
 .stage-evergreen { background: #eef5f1; color: var(--accent-evergreen); }

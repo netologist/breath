@@ -23,7 +23,9 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "predev": "node scripts/seed-content.mjs",
     "dev": "astro dev",
+    "prebuild": "node scripts/seed-content.mjs",
     "build": "node scripts/build-og-cache.mjs && astro build",
     "preview": "astro preview",
     "astro": "astro"

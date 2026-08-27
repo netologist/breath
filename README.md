@@ -2,51 +2,56 @@
 
 [![Built with Astro](https://img.shields.io/badge/Built%20with-Astro%205-FF5D01.svg?style=flat-square&logo=astro)](https://astro.build)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Deploy to GitHub Pages](https://github.com/netologist/breath/actions/workflows/deploy.yml/badge.svg)](https://github.com/netologist/breath/actions/workflows/deploy.yml)
+[![Deploy to GitHub Pages](https://github.com/netologist/breath/actions/workflows/github-pages.yml/badge.svg)](https://github.com/netologist/breath/actions/workflows/github-pages.yml)
 
-**Breath** is a clean, hyper-fast, and minimalist **Digital Garden & Engineering Blog** theme for [Astro](https://astro.build).
+**Breath** is a minimalist, hyper-fast **Digital Garden & Engineering Blog** template for [Astro](https://astro.build).
 
-It blends long-form structured essays with an associative knowledge garden where thoughts evolve from rough seedlings into polished evergreen notes.
+Designed for software engineers, systems thinkers, and technical writers who want to combine structured long-form essays with an evolving associative knowledge base.
 
 ---
 
-## ✨ Features
+## ✨ Highlights
 
-- **🌱 Digital Garden Architecture:** Classify notes by growth maturity (`🌱 Seedling` → `🌿 Budding` → `🌲 Evergreen`).
-- **🔗 Bi-directional Wikilinks:** Connect notes using intuitive `[[note-slug]]` or `[[note-slug|Custom Label]]` syntax.
-- **📚 Andy Matuschak-style Stacked Notes:** Click any internal note link to re-root into it — the previous notes slide left as narrow columns that you can collapse like an accordion (`‹`), close from the middle (`✕`), and reopen via the browser Back button. Deep links via `?stackedNotes=...`.
-- **🔗 External Link Previews:** Click any external link to see an OpenGraph metadata card (title, description, hostname) without leaving the note.
-- **📖 Interactive Table of Contents:** Maggie Appleton-style sticky TOC on desktop with active scrollspy highlight, transforming into a smooth full-screen drawer on mobile.
-- **🔍 Instant Client-side Search:** Fast, zero-dependency search across titles, descriptions, and tags.
-- **📱 100% Mobile Responsive:** Optimized top bar and off-canvas drawers for both navigation and table of contents (stacking is disabled on mobile).
-- **⚡ Zero JS Framework Overhead:** 100% pure Astro and vanilla TypeScript for maximum performance and lightweight assets.
-- **✒️ Distinctive Typography:** Powered by *Yanone Kaffeesatz* for headers/body and *JetBrains Mono* for code blocks.
-- **🚀 One-click GitHub Pages Deployment:** Built-in GitHub Actions workflow ready for instant deployment.
-- **📡 Built-in RSS Feed:** Auto-generated `/rss.xml` for all blog posts.
-- **📐 Architecture Decision Records:** See [`docs/decisions/`](docs/decisions/) for the rationale behind major design choices (stacked notes, external link previews, and more).
+- **🌱 4-Stage Note Lifecycle:** Evolve ideas across a clear maturity ladder (`📥 Captured` → `🌱 Seedling` → `🌿 Budding` → `🌲 Evergreen`).
+- **🔒 Auth-Gated Private Notes:** Protect raw research and personal notes behind Cloudflare Pages HTTP Basic Auth (`/notes/private/*`), while keeping the rest of your garden public.
+- **📂 Clean Content Separation:** Your content lives in root `content/` outside `src/` (gitignored), while the theme ships with self-seeding `example-content/` for effortless upstream template updates.
+- **📚 Andy Matuschak Stacked Notes:** Click note links to slide new notes in horizontally as an accordion (`‹`), collapse side-strips, and navigate history via URL sync.
+- **🔗 Recursive Bi-directional Wikilinks & Backlinks:** Write `[[note-id]]` or `[[note-id|Custom Label]]` with automatic recursive resolution across subdirectories and build-time safety warnings against leaking private links in public posts.
+- **🖼️ Rich Embeds & Link Previews:** Automatic responsive 16:9 YouTube embeds, native X/Twitter embed widgets, and floating OpenGraph hover cards for external URLs.
+- **🔍 Instant Zero-Dependency Search:** Ultra-fast client-side search across titles, descriptions, and tags.
+- **📐 Documented ADRs:** All architectural decisions (stacked notes, content separation, private notes, LLM-Wiki boundaries) are documented in [`docs/decisions/`](docs/decisions/).
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Clone or Fork the Repository
+Breath is distributed as a **GitHub Template Repository**.
+
+### 1. Create your repository
+
+Click **"Use this template"** on GitHub or clone the repository:
 
 ```bash
 git clone https://github.com/netologist/breath.git my-garden
 cd my-garden
 ```
 
-### 2. Install Dependencies
+### 2. Set up Upstream Remote (for seamless theme updates)
+
+```bash
+git remote rename origin upstream
+git remote add origin https://github.com/your-username/my-garden.git
+git push -u origin main
+```
+
+### 3. Install & Start
 
 ```bash
 npm install
-```
-
-### 3. Start the Local Development Server
-
-```bash
 npm run dev
 ```
+
+> **Automatic Content Seeding:** On first run, `scripts/seed-content.mjs` automatically populates root `content/` from `example-content/`. Your local `content/` directory is gitignored so upstream theme updates (`git pull upstream main`) will never overwrite your personal notes!
 
 Visit `http://localhost:4321` in your browser.
 
@@ -55,105 +60,145 @@ Visit `http://localhost:4321` in your browser.
 ## 📂 Project Structure
 
 ```text
+├── content/                  # Your site content (gitignored by default)
+│   ├── blog/                 # Public blog articles (.md / .mdx)
+│   └── notes/                # Public garden notes (.md / .mdx)
+│       └── private/          # Private / captured notes (auth-gated)
+├── example-content/          # Tracked demo content for fresh clones
+├── docs/
+│   ├── decisions/            # Architecture Decision Records (ADR-001 to ADR-008)
+│   └── tech-debt.md          # Technical debt & open decision registry
+├── functions/
+│   └── private/
+│       └── _middleware.js    # Cloudflare Pages Basic Auth middleware
 ├── .github/workflows/
-│   └── deploy.yml            # GitHub Actions deployment to GitHub Pages
+│   ├── github-pages.yml      # GitHub Pages deployment workflow (active)
+│   └── cloudflare.yml.disabled # Cloudflare Pages deployment workflow (optional)
 ├── public/
-│   ├── avatar.svg            # Site profile avatar
+│   ├── avatar.svg            # Profile avatar
 │   └── favicon.svg           # Site favicon
 ├── src/
-│   ├── content/
-│   │   ├── blog/             # Long-form blog posts (.md / .mdx)
-│   │   └── notes/            # Digital garden notes (.md / .mdx)
-│   ├── components/
-│   │   └── Sidebar.astro     # Responsive sidebar & mobile header drawer
-│   ├── layouts/
-│   │   ├── BaseLayout.astro  # HTML head, global styles, and layout shell
-│   │   ├── BlogLayout.astro  # Blog article layout with sticky TOC
-│   │   └── NoteLayout.astro  # Digital garden note layout with backlinks & drawers
-│   ├── pages/
-│   │   ├── index.astro       # Homepage with recent posts
-│   │   ├── about.astro       # About page
-│   │   ├── blog/             # Blog index and [slug] pages
-│   │   ├── notes/            # Digital garden index and [slug] pages
-│   │   ├── categories/       # Category index and [category] pages
-│   │   ├── series/           # Multi-part series index
-│   │   ├── tags/             # Tag index and [tag] pages
-│   │   ├── archive/          # Chronological archive
-│   │   ├── rss.xml.ts        # RSS 2.0 Feed endpoint
-│   │   └── api/notes.json.ts # Search & preview metadata endpoint
-│   ├── plugins/
-│   │   └── remark-wikilinks.mjs # Remark AST plugin for [[wikilinks]]
-│   ├── styles/
-│   │   └── global.css        # Design tokens, typography, and theme CSS
-│   └── utils/
-│       └── backlinks.ts      # Bi-directional backlink graph builder
-├── astro.config.mjs          # Astro configuration
-└── package.json
+│   ├── content.config.ts     # Content collections schema (Astro Content Layer)
+│   ├── components/           # UI components (Sidebar, Popover, etc.)
+│   ├── layouts/              # BaseLayout, BlogLayout, NoteLayout
+│   ├── pages/                # File-based routes (blog, notes, tags, categories)
+│   ├── plugins/              # remark-wikilinks, rehype-embeds
+│   ├── styles/               # CSS tokens, typography, and global styles
+│   └── utils/                # backlinks, content-dir, notes, date, url
+└── astro.config.mjs
 ```
 
 ---
 
 ## ✍️ Content Authoring
 
-### Writing Blog Posts (`src/content/blog/my-post.md`)
+### Writing Blog Posts (`content/blog/my-post.md`)
 
 ```markdown
 ---
-title: "Mastering Distributed Consensus"
-description: "A deep dive into Paxos, Raft, and distributed state machines."
-date: 2025-01-15
-updated: 2025-02-01
+title: "Building Resilient Distributed Systems"
+description: "Patterns for high-availability Raft state machines and consensus."
+date: 2026-08-27
+updated: 2026-08-28
 tags: ["distributed-systems", "raft", "go"]
 category: "engineering"
 series: "Distributed Systems"
 seriesOrder: 1
+draft: false
 ---
 
-Your content goes here with full Markdown and [[wikilinks]] support!
+Blog posts support full Markdown, code formatting, responsive embeds, and [[wikilinks]].
 ```
 
-### Writing Garden Notes (`src/content/notes/my-note.md`)
+### Writing Garden Notes (`content/notes/my-note.md`)
 
 ```markdown
 ---
 title: "Abstractions Should Hide Complexity"
 description: "Deep modules provide powerful functionality through narrow interfaces."
-stage: evergreen # seedling | budding | evergreen
-tags: ["architecture", "simplicity"]
-category: "design"
-created: 2024-11-20
-updated: 2025-01-10
+stage: evergreen        # captured | seedling | budding | evergreen
+tags: ["architecture", "design-patterns"]
+category: "architecture"
+para: resources         # projects | areas | resources | archives (optional)
+created: 2026-08-27
 ---
 
-Notes can link to other notes seamlessly using [[other-note-id|Custom Label]] syntax.
+Notes can link to other notes seamlessly with `[[note-slug]]` or `[[note-slug|Custom Label]]`.
+```
+
+### Writing Private / Captured Notes (`content/notes/private/my-capture.md`)
+
+```markdown
+---
+title: "AI Research Capture: Byzantine Faults"
+description: "Raw capture exploring consensus under untrusted node assumptions."
+stage: captured         # captured notes are automatically private
+para: resources
+source: "Claude 3.7 research session"
+tags: ["consensus", "byzantine"]
+created: 2026-08-27
+private: true
+---
+
+Private notes live in `content/notes/private/` and are excluded from all public listings.
+On Cloudflare Pages, accessing `/notes/private/*` requires HTTP Basic Auth.
 ```
 
 ---
 
-## ⚙️ Configuration
+## 🔒 Private Notes Setup (Cloudflare Pages)
 
-1. **Site Identity:** Update site author, metadata, and social links in `src/components/Sidebar.astro` and `src/layouts/BaseLayout.astro`.
-2. **Avatar:** Replace `public/avatar.svg` with your own image or avatar.
-3. **Deployment URL:** Set your repository URL or custom domain in `astro.config.mjs`.
+Breath includes zero-config HTTP Basic Auth for Cloudflare Pages:
+
+1. **Pages Function:** `functions/private/_middleware.js` intercepts requests to `/notes/private/*`.
+2. **Environment Variables:** Set credentials in Cloudflare dashboard (**Settings → Variables and Secrets**):
+   - `AUTH_USER` (default: `admin`)
+   - `AUTH_PASSWORD` (default: `changeme` — **rotate before going live!**)
+   - `AUTH_REALM` (default: `Private Notes`)
+3. **Pipeline:** Enable `.github/workflows/cloudflare.yml.disabled` by renaming it to `cloudflare.yml` and configuring GitHub secrets (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PROJECT_NAME`, `AUTH_USER`, `AUTH_PASSWORD`).
+
+For full details, read [`content/notes/cloudflare-private-notes.md`](content/notes/cloudflare-private-notes.md).
+
+---
+
+## 🤖 LLM-Wiki & AI Agent Guidelines
+
+If you use AI coding tools (Claude Code, Cursor, Aider) or knowledge graph tools like **Graphify**:
+
+- Run `/graphify` locally to build an index in `graphify-out/`.
+- `graphify-out/` is gitignored and is never deployed with the site.
+- AI subagents consult `AGENTS.md` to guarantee that references and titles from private captures never leak into public blog posts.
+
+---
+
+## 📐 Architecture Decision Records (ADRs)
+
+Key architectural decisions are documented in [`docs/decisions/`](docs/decisions/):
+
+- [ADR-001](docs/decisions/ADR-001-stacked-notes.md): Andy Matuschak Stacked Notes navigation model
+- [ADR-002](docs/decisions/ADR-002-external-links-embeds.md): External Link Previews & Media Embeds
+- [ADR-003](docs/decisions/ADR-003-theme-distribution-content-separation.md): GitHub Template Distribution & Content Directory Separation
+- [ADR-004](docs/decisions/ADR-004-private-notes-auth-gated.md): Single-Build Auth-Gated Private Notes Architecture
+- [ADR-005](docs/decisions/ADR-005-link-preview-v2.md): Link Preview Popover & Media Embed Architecture
+- [ADR-006](docs/decisions/ADR-006-note-content-model.md): Note Content Model (Captured Stage, PARA, Provenance)
+- [ADR-007](docs/decisions/ADR-007-llm-wiki-local-graph.md): LLM-Wiki Local Knowledge Graph with Privacy Boundary
+- [ADR-008](docs/decisions/ADR-008-single-language-theme-scope.md): Single-Language Theme Scope & Deferred i18n
 
 ---
 
 ## 🚢 Deployment
 
-### GitHub Pages (Automated)
+### GitHub Pages (Default)
 
-This theme includes an automated GitHub Actions workflow at `.github/workflows/deploy.yml`.
+The repository ships with `.github/workflows/github-pages.yml` active:
+1. In your GitHub repo: **Settings → Pages → Source: GitHub Actions**.
+2. Push to `main` — your site builds and deploys automatically.
 
-1. Push your repository to GitHub.
-2. In your repository settings on GitHub, navigate to **Settings** → **Pages**.
-3. Under **Build and deployment** → **Source**, select **GitHub Actions**.
-4. The site will automatically build and deploy on every push to the `main` branch.
+### Cloudflare Pages (with Private Notes Auth)
 
-### Vercel / Netlify / Cloudflare Pages
-
-You can also deploy with standard static build commands:
-- **Build Command:** `npm run build`
-- **Output Directory:** `dist`
+1. Connect your repository to Cloudflare Pages (Preset: **Astro**, Build: `npm run build`, Output: `dist`).
+2. Add secrets `AUTH_USER` and `AUTH_PASSWORD`.
+3. Enable `.github/workflows/cloudflare.yml.disabled` (rename to `.yml`).
 
 ---
 
