@@ -52,7 +52,6 @@ that page.
 - **Pipeline split:** `.github/workflows/github-pages.yml` is ACTIVE;
   `.github/workflows/cloudflare.yml.disabled` is shipped disabled (rename to
   `cloudflare.yml` to enable). Only one should run per push.
-- **Auth mechanism — PENDING:** Pages Function (`functions/private/_middleware.js`)
-  vs standalone Worker. Both support password rotation via Cloudflare secrets
-  (no code/deploy change); recommendation is the Pages Function. Blocks the
-  guide note + middleware file.
+- **Auth mechanism — RESOLVED:** Pages Function
+  (`functions/private/_middleware.js`) implemented (2026-08-27). Standalone
+  Worker remains a documented drop-in alternative in the guide note.
