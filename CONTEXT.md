@@ -36,7 +36,20 @@ no implementation details, no specs.
 
 ## Open terms (not yet resolved)
 
-- **Captured Note** — raw, unprocessed content (including AI-generated) kept as
-  a capture before distillation. Mechanism under discussion.
-- **Draft** — content excluded from the public build; already exists for posts,
-  planned for notes.
+- **Captured Note** — a note in the `captured` stage: raw, unprocessed content
+  (typically AI-generated) kept for research before distillation. Captured
+  notes are private by default (auth-gated, see ADR-004) and live under
+  `content/notes/private/`. They carry an optional `source` string recording
+  provenance (LLM, URL, or document).
+- **Distillation** — the author's manual process of turning Captured Notes into
+  mature notes/documents (CODE: Capture → Organize → Distill → Express).
+- **PARA** — the organizing scheme applied as an optional frontmatter field
+  (`para: projects | areas | resources | archives`), orthogonal to the topical
+  `category` and the lifecycle `stage`.
+- **Draft** — content excluded from the public build. Exists for **posts**
+  (schema + all surfaces filter it). Notes deliberately do **not** have drafts:
+  private/public is sufficient.
+- **LLM-Wiki** — the author's personal workflow: a **local** Graphify knowledge
+  graph over the site content (indexed incl. private/captured notes), queried
+  by AI agents to generate research captures. The graph is gitignored and never
+  deployed (privacy boundary, see ADR-007).
