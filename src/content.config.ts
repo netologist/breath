@@ -26,6 +26,7 @@ const notes = defineCollection({
     category: z.string().optional(),
     created: z.coerce.date(),
     updated: z.coerce.date().optional(),
+    private: z.boolean().default(false),
   }),
 });
 

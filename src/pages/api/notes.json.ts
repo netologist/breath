@@ -1,8 +1,9 @@
 import { getCollection } from 'astro:content';
 import { buildBacklinks } from '../../utils/backlinks';
+import { isPrivateNote } from '../../utils/notes';
 
 export async function GET() {
-  const notes = await getCollection('notes');
+  const notes = (await getCollection('notes')).filter(n => !isPrivateNote(n));
   const backlinks = buildBacklinks();
 
   const data = notes.map(n => ({

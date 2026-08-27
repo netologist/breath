@@ -1,0 +1,95 @@
+# Cloudflare Pages pipeline — DISABLED by default.
+#
+# GitHub Actions only loads workflow files ending in `.yml` / `.yaml`, so this
+# file (`.yml.disabled`) is inert. To enable:
+#   1. `git mv .github/workflows/cloudflare.yml.disabled .github/workflows/cloudflare.yml`
+#   2. Add the repository secrets listed at the bottom of this file.
+#
+# The ACTIVE pipeline is `github-pages.yml`. Only one deploy pipeline should
+# run per push — keep this one disabled unless you deploy to Cloudflare Pages.
+
+name: Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: 'SITE_URL for canonical URLs (no trailing slash)'
+        required: false
+        default: 'https://your-domain.com'
+      base_path:
+        description: 'BASE_PATH for Astro base (root deploy: /)'
+        required: false
+        default: '/'
+      content_dir:
+        description: 'Content directory (CONTENT_DIR)'
+        required: false
+        default: 'content'
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  deploy:
+    name: Build & Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with Astro
+        run: npm run build
+        env:
+          SITE_URL: ${{ inputs.site_url || 'https://your-domain.com' }}
+          BASE_PATH: ${{ inputs.base_path || '/' }}
+          CONTENT_DIR: ${{ inputs.content_dir || 'content' }}
+
+      # The Pages project must exist first:
+           #   npx wrangler pages project create <name> --production-branch=main
+      # Prebuilt assets are deployed; the Basic Auth gate lives in
+      # functions/ and is bundled with --functions.
+      - name: Deploy to Cloudflare Pages
+                run: npx wrangler pages deploy dist --functions=functions --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch=${{ github.ref_name }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Private-notes gate (see the Cloudflare guide note in example content):
+      # the Basic Auth credentials are runtime secrets — rotate any time
+      # without a code change or redeploy. `wrangler pages secret put` reads
+      # the value from stdin.
+      #
+      # Alternative: if a standalone Worker gate is chosen instead of a Pages
+      # Function, replace this step with `wrangler secret put` on the Worker.
+      - name: Set Basic Auth secrets on the Pages project
+        run: |
+          printf '%s\n' "${{ secrets.AUTH_USER }}" | npx wrangler pages secret put AUTH_USER --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+          printf '%s\n' "${{ secrets.AUTH_PASSWORD }}" | npx wrangler pages secret put AUTH_PASSWORD --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+# ── Required repository secrets (Settings → Secrets and variables → Actions) ──
+#   CLOUDFLARE_API_TOKEN    — API token with "Cloudflare Pages:Edit" (+ "Workers Scripts:Edit" if a Worker gate is used)
+#   CLOUDFLARE_ACCOUNT_ID   — Cloudflare account ID
+#   CLOUDFLARE_PROJECT_NAME — Cloudflare Pages project name
+#   AUTH_USER               — Basic Auth username for /notes/private/* (default: admin)
+#   AUTH_PASSWORD           — Basic Auth password (default: changeme — rotate before going live)
+#
+# ── Rotating the password later (no code, no deploy) ──
+#   printf '%s\n' 'new-password' | npx wrangler pages secret put AUTH_PASSWORD --project-name=<name>

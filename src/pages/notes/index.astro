@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
 import { url, base } from '../../utils/url';
 import { formatYMD, getEffectiveDate, sortByDate } from '../../utils/date';
+import { isPrivateNote } from '../../utils/notes';
 const allNotes = await getCollection('notes');
 
 // Fetch and render the flagship garden entry note
@@ -17,7 +18,7 @@ if (gardenEntry) {
 // Sort remaining notes by growth stage
 const stageOrder = { evergreen: 0, budding: 1, seedling: 2 };
 const directoryNotes = allNotes
-  .filter(n => n.id !== 'garden')
+  .filter(n => n.id !== 'garden' && !isPrivateNote(n))
   .sort((a, b) => stageOrder[a.data.stage] - stageOrder[b.data.stage]);
 
 const byStage = {
@@ -29,7 +30,7 @@ const stageLabel = { evergreen: '🌲 Evergreen Notes', budding: '🌿 Budding I
 const stageCls   = { evergreen: 'stage-evergreen', budding: 'stage-budding', seedling: 'stage-seedling' };
 
 const tagCounts: Record<string, number> = {};
-allNotes.forEach(n => n.data.tags.forEach(t => { tagCounts[t] = (tagCounts[t] ?? 0) + 1; }));
+allNotes.filter(n => !isPrivateNote(n)).forEach(n => n.data.tags.forEach(t => { tagCounts[t] = (tagCounts[t] ?? 0) + 1; }));
 const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
 ---
 

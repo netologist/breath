@@ -27,11 +27,13 @@ const UA = 'Mozilla/5.0 (compatible; BreathBot/1.0; +https://github.com/netologi
 
 /** Extract external URLs from markdown: [text](url) and bare https:// URLs. */
 function extractUrls(md) {
-  const urls = new Set();
+   const urls = new Set();
+  // Skip code fences and inline code — example URLs in docs must not be fetched.
+  const text = md.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '');
   // [text](url)
-  for (const m of md.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g)) urls.add(m[1].replace(/["<>]+$/, ''));
+    for (const m of text.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g)) urls.add(m[1].replace(/["<>]+$/, ''));
   // bare URLs in text (excluding code fences is overkill for a theme cache)
-  for (const m of md.matchAll(/(?<![\(\w])(https?:\/\/[^\s)<>"]+)/g)) urls.add(m[1]);
+    for (const m of text.matchAll(/(?<![\(\w])(https?:\/\/[^\s)<>"]+)/g)) urls.add(m[1]);
   return [...urls];
 }
 
@@ -45,8 +47,13 @@ async function walk(dir) {
   }
   for (const e of entries) {
     const p = join(dir, e.name);
-    if (e.isDirectory()) out.push(...await walk(p));
-    else if (e.isFile() && /\.(md|mdx)$/.test(e.name)) out.push(p);
+    if (e.isDirectory()) {
+      // Private notes are not part of the public OG cache.
+      if (e.name === 'private') continue;
+      out.push(...await walk(p));
+    } else if (e.isFile() && /\.(md|mdx)$/.test(e.name)) {
+      out.push(p);
+    }
   }
   return out;
 }

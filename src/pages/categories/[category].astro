@@ -4,10 +4,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Sidebar from '../../components/Sidebar.astro';
 import { url } from '../../utils/url';
 import { formatYMD, getEffectiveDate, sortByDate } from '../../utils/date';
+import { isPrivateNote } from '../../utils/notes';
 
 export async function getStaticPaths() {
   const allPosts = await getCollection('blog', ({ data }) => !data.draft);
-  const allNotes = await getCollection('notes');
+  const allNotes = (await getCollection('notes')).filter(n => !isPrivateNote(n));
 
   const catSet = new Set<string>();
   allPosts.forEach(p => catSet.add(p.data.category ?? 'general'));
