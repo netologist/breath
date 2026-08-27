@@ -4,9 +4,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { url } from '../utils/url';
 import { formatYMD, getEffectiveDate, sortByDate } from '../utils/date';
+import { isPrivateNote, stageLabel, stageCls } from '../utils/notes';
 
 const allPosts = await getCollection('blog', ({ data }) => !data.draft);
-const allNotes = await getCollection('notes');
+const allNotes = (await getCollection('notes')).filter(n => !isPrivateNote(n));
 
 interface CategoryGroup {
   posts: typeof allPosts;
@@ -30,8 +31,6 @@ const categories = Object.keys(byCategory).sort((a, b) =>
   (byCategory[a].posts.length + byCategory[a].notes.length)
 );
 
-const stageLabel = { seedling: '🌱 Seedling', budding: '🌿 Budding', evergreen: '🌲 Evergreen' };
-const stageCls   = { seedling: 'stage-seedling', budding: 'stage-budding', evergreen: 'stage-evergreen' };
 
 
 ---

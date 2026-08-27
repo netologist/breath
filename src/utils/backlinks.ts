@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { notesDirPath, blogDirPath } from './content-dir.mjs';
 
 const base = (process.env.BASE_PATH || (process.env.GITHUB_ACTIONS ? '/breath' : '')).replace(/\/$/, '');
 
@@ -12,23 +13,45 @@ function slugify(str: string): string {
     .replace(/^-|-$/g, '');
 }
 
-function buildNoteMap(): Record<string, string> {
-  const map: Record<string, string> = {};
-  const dir = join(process.cwd(), 'src/content/notes');
-  let files: string[];
+function scanDirRecursively(dir: string, baseDir: string = dir, results: { fullPath: string; id: string }[] = []): { fullPath: string; id: string }[] {
+  let entries;
   try {
-    files = readdirSync(dir);
+    entries = readdirSync(dir, { withFileTypes: true });
   } catch {
-    return map;
+    return results;
   }
 
-  for (const file of files) {
-    if (!/\.mdx?$/.test(file)) continue;
-    const id = file.replace(/\.mdx?$/, '');
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      scanDirRecursively(fullPath, baseDir, results);
+    } else if (entry.isFile() && /\.mdx?$/.test(entry.name)) {
+      const relPath = relative(baseDir, fullPath).replace(/\\/g, '/');
+      const id = relPath.replace(/\.mdx?$/, '');
+      results.push({ fullPath, id });
+    }
+  }
+
+  return results;
+}
+
+function buildNoteMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+  const scanned = scanDirRecursively(notesDirPath);
+
+  for (const file of scanned) {
+    const id = file.id;
     map[id] = id;
     map[slugify(id)] = id;
+
+    const baseName = id.split('/').pop();
+    if (baseName && !map[baseName]) {
+      map[baseName] = id;
+      map[slugify(baseName)] = id;
+    }
+
     try {
-      const raw = readFileSync(join(dir, file), 'utf8');
+      const raw = readFileSync(file.fullPath, 'utf8');
       const titleMatch = raw.match(/^title:\s*["']?(.+?)["']?\s*$/m);
       if (titleMatch) {
         const title = titleMatch[1].trim();
@@ -56,19 +79,13 @@ export function buildBacklinks(): Record<string, BacklinkEntry[]> {
   const MD_LINK_RE = /\[([^\]]+)\]\((?:\/breath)?\/notes\/([^\s\)]+)\)/g;
 
   function scanDir(dirPath: string, type: 'note' | 'blog') {
-    let files: string[];
-    try {
-      files = readdirSync(dirPath);
-    } catch {
-      return;
-    }
+    const files = scanDirRecursively(dirPath);
 
     for (const file of files) {
-      if (!/\.mdx?$/.test(file)) continue;
-      const sourceId = file.replace(/\.mdx?$/, '');
+      const sourceId = file.id;
       let raw: string;
       try {
-        raw = readFileSync(join(dirPath, file), 'utf8');
+        raw = readFileSync(file.fullPath, 'utf8');
       } catch {
         continue;
       }
@@ -122,8 +139,8 @@ export function buildBacklinks(): Record<string, BacklinkEntry[]> {
     }
   }
 
-  scanDir(join(process.cwd(), 'src/content/notes'), 'note');
-  scanDir(join(process.cwd(), 'src/content/blog'), 'blog');
+  scanDir(notesDirPath, 'note');
+  scanDir(blogDirPath, 'blog');
 
   return backlinks;
 }

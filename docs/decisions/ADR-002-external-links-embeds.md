@@ -1,7 +1,8 @@
 # ADR-002: External link indicators, site-wide link preview, and media embeds
 
 ## Status
-Accepted
+Accepted — partially superseded by ADR-005 (side preview panel → hover popover;
+X/Twitter iframe embed → official widget)
 
 ## Date
 2026-08-26

@@ -1,8 +1,9 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { contentDirName } from './utils/content-dir.mjs';
 
 const blog = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blog' }),
+  loader: glob({ pattern: '**/*.{md,mdx}', base: `./${contentDirName}/blog` }),
   schema: z.object({
     title: z.string(),
     description: z.string(),
@@ -17,15 +18,18 @@ const blog = defineCollection({
 });
 
 const notes = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/notes' }),
+  loader: glob({ pattern: '**/*.{md,mdx}', base: `./${contentDirName}/notes` }),
   schema: z.object({
     title: z.string(),
     description: z.string().optional(),
-    stage: z.enum(['seedling', 'budding', 'evergreen']).default('seedling'),
+    stage: z.enum(['captured', 'seedling', 'budding', 'evergreen']).default('seedling'),
     tags: z.array(z.string()).default([]),
     category: z.string().optional(),
+    para: z.enum(['projects', 'areas', 'resources', 'archives']).optional(),
+    source: z.string().optional(),
     created: z.coerce.date(),
     updated: z.coerce.date().optional(),
+    private: z.boolean().default(false),
   }),
 });
 

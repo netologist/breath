@@ -13,6 +13,9 @@ yarn-error.log*
 pnpm-debug.log*
 
 
+# user content (when using default content directory)
+content/
+
 # environment variables
 .env
 .env.production

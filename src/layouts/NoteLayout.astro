@@ -2,12 +2,13 @@
 import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { url } from '../utils/url';
+import { stageLabel, stageCls, type NoteStage } from '../utils/notes';
 import type { MarkdownHeading } from 'astro';
 
 interface Props {
   title: string;
   description?: string;
-  stage: 'seedling' | 'budding' | 'evergreen';
+  stage: NoteStage;
   created?: Date;
   updated?: Date;
   tags?: string[];
@@ -27,9 +28,6 @@ const {
   headings = [],
   backlinks = [],
 } = Astro.props;
-
-const stageLabel = { seedling: '🌱 Seedling', budding: '🌿 Budding', evergreen: '🌲 Evergreen' };
-const stageCls   = { seedling: 'stage-seedling', budding: 'stage-budding', evergreen: 'stage-evergreen' };
 
 function fmt(d?: Date) {
   if (!d) return '';
