@@ -131,7 +131,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
             <!-- Desktop sticky TOC (inside root column) -->
             {tocHeadings.length > 0 && (
               <aside class="toc-sidebar" id="toc-sidebar" aria-label="Table of Contents">
-                <div class="toc-card" id="toc-card">
+                <div class="toc-card collapsed" id="toc-card">
                   <div class="toc-card-header" id="toc-header-toggle">
                     <div class="toc-title-group">
                       <svg class="toc-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -145,8 +145,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
                       <span class="toc-title">Contents</span>
                       <span class="toc-count-badge">{tocHeadings.length}</span>
                     </div>
-                    <button id="toc-toggle-btn" class="toc-toggle-btn desktop-only" type="button" aria-expanded="true" aria-controls="toc-nav" aria-label="Toggle table of contents">
-                      <span id="toc-toggle-label">Hide</span>
+                    <button id="toc-toggle-btn" class="toc-toggle-btn desktop-only" type="button" aria-expanded="false" aria-controls="toc-nav" aria-label="Toggle table of contents">
+                      <span id="toc-toggle-label">Show</span>
                       <svg id="toc-chevron" class="toc-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="18 15 12 9 6 15"></polyline>
                       </svg>
@@ -531,9 +531,20 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   });
   tocDrawerClose?.addEventListener('click', (e) => { e.stopPropagation(); closeMobileToc(); });
   tocBackdrop?.addEventListener('click', closeMobileToc);
-  tocLinks.forEach(l => l.addEventListener('click', () => { if (window.innerWidth <= 768) closeMobileToc(); }));
+  tocLinks.forEach(l => l.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      closeMobileToc();
+    }
+  }));
 
-  // Scrollspy
+  // Click outside on desktop closes floating TOC
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth > 768 && tocCard && !tocCard.classList.contains('collapsed')) {
+      if (!tocCard.contains(e.target as Node)) {
+        toggleDesktopToc();
+      }
+    }
+  });
   if (tocLinks.length > 0) {
     const headingEls = Array.from(tocLinks)
       .map(l => { const s = l.getAttribute('data-slug'); return s ? document.getElementById(s) : null; })
@@ -720,10 +731,13 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   }
 
   .note-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 200px;
-    gap: 32px;
-    align-items: start;
+    position: relative;
+    display: block;
+    width: 100%;
+  }
+  .note-article {
+    max-width: var(--max-prose, 680px);
+    width: 100%;
   }
 
   /* ── Stacked column topbar ── */
@@ -863,6 +877,9 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   }
   .note-category { color: var(--text-secondary); font-weight: 500; }
 
+  .note-header {
+    position: relative;
+  }
   .note-title {
     font-size: 1.95rem;
     line-height: 1.2;
@@ -870,6 +887,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     font-weight: 700;
     letter-spacing: -0.01em;
     color: #b22;
+    padding-right: 140px;
   }
   .note-desc {
     font-style: italic;
@@ -959,20 +977,31 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
      STICKY TABLE OF CONTENTS (inside root col)
   ══════════════════════════════════════ */
   .toc-sidebar {
-    position: sticky;
-    top: 32px;
-    max-height: calc(100dvh - 64px);
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 50;
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
   }
   .toc-card {
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 12px;
-    transition: border-color var(--transition);
+    padding: 5px 10px;
+    transition: all var(--transition);
+    width: auto;
   }
   .toc-card:hover { border-color: var(--border-hover); }
+  .toc-card:not(.collapsed) {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    width: 260px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
   .toc-card-header {
     display: flex;
     align-items: center;
@@ -1047,6 +1076,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   @media (max-width: 768px) {
     .desktop-only { display: none !important; }
     .mobile-only  { display: flex !important; }
+    .note-title   { padding-right: 0 !important; }
     .toc-count-badge {
       display: inline-flex;
       align-items: center;
