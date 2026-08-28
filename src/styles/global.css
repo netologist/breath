@@ -5,8 +5,6 @@
    Monospace for code & pre.
    ───────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ── Tokens ── */
 :root {
@@ -332,6 +330,8 @@ h2.page-title {
   color: var(--text-primary);
   text-decoration: none;
   flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 .listing a:hover {
   color: var(--text-link);
@@ -376,9 +376,12 @@ body.drawer-open {
     grid-template-columns: 1fr;
     display: flex;
     flex-direction: column;
+    min-height: 100dvh;
   }
   .site-content {
     padding: var(--space-md) var(--space-md) var(--space-xl);
     max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
   }
 }

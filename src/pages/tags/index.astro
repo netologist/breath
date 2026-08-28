@@ -95,4 +95,11 @@ const sortedTags = Object.entries(tagMap).sort((a, b) => b[1].total - a[1].total
   .tag-sep {
     color: var(--border);
   }
+
+  @media (max-width: 480px) {
+    .tag-cloud-page {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }
 </style>

@@ -206,9 +206,16 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   const stacksEl  = document.getElementById('stacked-columns')!;
   const rootCol   = document.getElementById('root-column')!;
 
-  // ─── Body lock for stacked mode ───
-  document.body.classList.add('notes-stacked');
-
+  // ─── Body lock for stacked mode (desktop only) ───
+  function updateStackedBodyLock() {
+    if (window.innerWidth > 768) {
+      document.body.classList.add('notes-stacked');
+    } else {
+      document.body.classList.remove('notes-stacked');
+    }
+  }
+  updateStackedBodyLock();
+  window.addEventListener('resize', updateStackedBodyLock);
   // ════════════════════════════════
   // URL State
   // ════════════════════════════════
@@ -480,6 +487,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   // Boot from URL
   // ════════════════════════════════
   (async () => {
+    if (window.innerWidth <= 768) return; // Desktop only: do not auto-stack columns on mobile
     const init = readURLStack();
     for (const id of init) {
       stack.push(id);
@@ -1090,32 +1098,56 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       line-height: 1.3;
     }
 
+    /* Reset body lock and enable full page scrolling on mobile */
+    body.notes-stacked,
+    body.notes-stacked .site-layout,
+    body,
+    .site-layout {
+      overflow: visible !important;
+      height: auto !important;
+      min-height: 100dvh;
+    }
+
     /* Un-stack: single column, body scrolls normally */
     .notes-stack-outer {
-      overflow-x: visible;
-      overflow-y: visible;
-      height: auto;
-      display: block;
+      overflow: visible !important;
+      height: auto !important;
+      display: block !important;
+      min-height: auto;
     }
-    .notes-stack { display: block; }
+    .notes-stack {
+      display: block !important;
+      height: auto !important;
+      min-height: auto;
+    }
     .note-column {
       width: 100% !important;
       height: auto !important;
-      border-right: none;
-      overflow: visible;
+      border-right: none !important;
+      overflow: visible !important;
+      display: block !important;
     }
-    .col-collapse-btn { display: none; }
-    .col-body { overflow: visible; height: auto; }
+    .col-collapse-btn { display: none !important; }
+    .col-body {
+      overflow: visible !important;
+      height: auto !important;
+      max-height: none !important;
+    }
     #root-body {
-      padding: var(--space-md) var(--space-md) var(--space-xl);
+      padding: var(--space-md) var(--space-md) var(--space-xl) !important;
+      overflow: visible !important;
+      height: auto !important;
     }
     .note-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
+      display: block !important;
+      width: 100% !important;
+    }
+    .note-article {
+      max-width: 100% !important;
+      width: 100% !important;
     }
     /* Hide stacked columns on mobile */
-    #stacked-columns { display: none; }
-
+    #stacked-columns { display: none !important; }
     /* ── Mobile Backdrop Overlay ── */
     .toc-backdrop {
       display: block;

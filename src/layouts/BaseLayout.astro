@@ -26,6 +26,13 @@ const rssUrl = url('/rss.xml');
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Preconnect to Google Fonts for instant font loading (prevents FOUT) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
     <link rel="icon" type="image/svg+xml" href={faviconUrl} />
     <link rel="canonical" href={canonicalURL} />
 
