@@ -1,0 +1,9 @@
+{
+  "interfaceFontFamily": "Yanone Kaffeesatz, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  "textFontFamily": "Yanone Kaffeesatz, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  "monospaceFontFamily": "JetBrains Mono, Menlo, Monaco, Consolas, 'Courier New', monospace",
+  "baseFontSize": 16,
+  "enabledCssSnippets": [
+    "digital-garden"
+  ]
+}

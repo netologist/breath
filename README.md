@@ -1,25 +1,29 @@
 # 🌿 Breath — Minimalist Digital Garden & Engineering Blog
 
 [![Built with Astro](https://img.shields.io/badge/Built%20with-Astro%205-FF5D01.svg?style=flat-square&logo=astro)](https://astro.build)
+[![Obsidian Ready](https://img.shields.io/badge/Obsidian-Ready%20Vault-7C3AED.svg?style=flat-square&logo=obsidian)](https://obsidian.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Deploy to GitHub Pages](https://github.com/netologist/breath/actions/workflows/github-pages.yml/badge.svg)](https://github.com/netologist/breath/actions/workflows/github-pages.yml)
 
-**Breath** is a minimalist, hyper-fast **Digital Garden & Engineering Blog** template for [Astro](https://astro.build).
+**Breath** is a minimalist, hyper-fast **Digital Garden & Engineering Blog** template for [Astro 5+](https://astro.build) with native, zero-setup **Obsidian Vault** integration.
 
-Designed for software engineers, systems thinkers, and technical writers who want to combine structured long-form essays with an evolving associative knowledge base.
+Designed for software engineers, systems thinkers, and technical writers who want to seamlessly combine structured long-form essays with an evolving associative knowledge garden.
 
 ---
 
 ## ✨ Highlights
 
-- **🌱 4-Stage Note Lifecycle:** Evolve ideas across a clear maturity ladder (`📥 Captured` → `🌱 Seedling` → `🌿 Budding` → `🌲 Evergreen`).
+- **🌱 4-Stage Note Maturity Ladder:** Evolve ideas across a structured growth cycle (`📥 Captured` → `🌱 Seedling` → `🌿 Budding` → `🌲 Evergreen`).
+- **🔮 Native Obsidian Vault:** Open this repository directly in [Obsidian](https://obsidian.md) as a fully configured vault with pre-configured `[[wikilinks]]`, templates, and digital garden property badges.
+- **⚙️ Centralized Configuration (`src/site.config.ts`):** Single typed configuration file for your full name, nickname (`a.k.a @...`), avatar, bio, dynamic social links, and sidebar navigation.
+- **📚 Andy Matuschak Stacked Notes (Desktop):** Click note links to slide new notes in horizontally as smooth accordion columns (`‹`), collapse side-strips, and sync state in URL query parameters.
+- **📱 100% Mobile Responsive:** Clean direct page navigation on mobile, full-screen slide-out TOC and navigation drawers, and touch-optimized list items.
+- **⚡ Zero-FOUT Self-Hosted Typography:** Bundled `Yanone Kaffeesatz` & `JetBrains Mono` with `<head>` preloading and `font-display: block` for instant, shift-free first-frame rendering.
 - **🔒 Auth-Gated Private Notes:** Protect raw research and personal notes behind Cloudflare Pages HTTP Basic Auth (`/notes/private/*`), while keeping the rest of your garden public.
-- **📂 Clean Content Separation:** Your content lives in root `content/` outside `src/` (gitignored), while the theme ships with self-seeding `example-content/` for effortless upstream template updates.
-- **📚 Andy Matuschak Stacked Notes:** Click note links to slide new notes in horizontally as an accordion (`‹`), collapse side-strips, and navigate history via URL sync.
+- **📂 Clean Content Separation:** Your personal content lives in root `content/` outside `src/` (gitignored), while the theme ships with self-seeding `example-content/` for effortless upstream template updates.
 - **🔗 Recursive Bi-directional Wikilinks & Backlinks:** Write `[[note-id]]` or `[[note-id|Custom Label]]` with automatic recursive resolution across subdirectories and build-time safety warnings against leaking private links in public posts.
+- **🔍 Instant Zero-Dependency Search & Sort:** Real-time search across titles, descriptions, and tags with top-corner `Updated` / `Created` timeline sorting.
 - **🖼️ Rich Embeds & Link Previews:** Automatic responsive 16:9 YouTube embeds, native X/Twitter embed widgets, and floating OpenGraph hover cards for external URLs.
-- **🔍 Instant Zero-Dependency Search:** Ultra-fast client-side search across titles, descriptions, and tags.
-- **📐 Documented ADRs:** All architectural decisions (stacked notes, content separation, private notes, LLM-Wiki boundaries) are documented in [`docs/decisions/`](docs/decisions/).
 
 ---
 
@@ -57,9 +61,78 @@ Visit `http://localhost:4321` in your browser.
 
 ---
 
+## 🔮 Native Obsidian Integration
+
+You can open this project directory directly in **Obsidian** as an out-of-the-box digital garden vault:
+
+1. Open **Obsidian** → Click **"Open folder as vault"**.
+2. Select your `breath` project folder.
+3. Everything is pre-configured and ready:
+   - **`[[Wikilinks]]` Auto-Completion:** Typing `[[` auto-suggests notes and links them cleanly.
+   - **Visual Growth Badges:** Frontmatter properties render colored badges for `stage` (`🌱 seedling`, `🌿 budding`, `🌲 evergreen`, `📥 captured`).
+   - **Attachment Routing:** Drag-and-dropped images automatically save to `public/images/`.
+   - **Pre-configured Templates (`Ctrl/Cmd + T`):**
+     - `new-note.md` — Standard seedling note
+     - `new-evergreen.md` — Deep reference note
+     - `new-blog-post.md` — Blog article
+     - `new-capture.md` — Private research capture
+
+---
+
+## ⚙️ Configuration (`src/site.config.ts`)
+
+Customize author identity, navigation links, social icons, and site metadata in `src/site.config.ts`:
+
+```typescript
+export const siteConfig = {
+  // Author & Identity
+  author: {
+    name: 'John Doe',
+    nickname: 'johndoe',          // Rendered as "a.k.a @johndoe"
+    avatar: '/avatar.svg',
+    bio: 'Engineer, tinkerer, and systems thinker.',
+  },
+
+  // Social Links in Sidebar (SVG icons rendered automatically)
+  social: [
+    { platform: 'github',   href: 'https://github.com/your-name', label: 'GitHub' },
+    { platform: 'linkedin', href: 'https://linkedin.com/in/your-name', label: 'LinkedIn' },
+    { platform: 'x',        href: 'https://x.com/your-handle', label: 'X / Twitter' },
+    { platform: 'rss',      href: '/rss.xml', label: 'RSS Feed' },
+  ],
+
+  // Sidebar Navigation Items
+  nav: [
+    { href: '/about',      label: 'about' },
+    { href: '/blog',       label: 'posts' },
+    { href: '/notes',      label: 'notes' },
+    { href: '/categories', label: 'categories' },
+    { href: '/series',     label: 'series' },
+    { href: '/tags',       label: 'tags' },
+    { href: '/archive',    label: 'archive' },
+  ],
+
+  // Source Repository Link
+  sourceLink: {
+    href: 'https://github.com/your-username/my-garden',
+    label: 'github repo',
+  },
+
+  // Site Metadata
+  site: {
+    title: 'Breath',
+    description: 'A minimalist digital garden and engineering blog.',
+    url: 'https://your-domain.com',
+  },
+};
+```
+
+---
+
 ## 📂 Project Structure
 
 ```text
+├── .obsidian/                # Obsidian vault configuration, templates & CSS snippets
 ├── content/                  # Your site content (gitignored by default)
 │   ├── blog/                 # Public blog articles (.md / .mdx)
 │   └── notes/                # Public garden notes (.md / .mdx)
@@ -71,20 +144,19 @@ Visit `http://localhost:4321` in your browser.
 ├── functions/
 │   └── private/
 │       └── _middleware.js    # Cloudflare Pages Basic Auth middleware
-├── .github/workflows/
-│   ├── github-pages.yml      # GitHub Pages deployment workflow (active)
-│   └── cloudflare.yml.disabled # Cloudflare Pages deployment workflow (optional)
 ├── public/
+│   ├── fonts/                # Self-hosted woff2 font files
+│   ├── images/               # Image attachments (used by Obsidian & Astro)
 │   ├── avatar.svg            # Profile avatar
 │   └── favicon.svg           # Site favicon
 ├── src/
+│   ├── site.config.ts        # Centralized site & author configuration
 │   ├── content.config.ts     # Content collections schema (Astro Content Layer)
-│   ├── components/           # UI components (Sidebar, Popover, etc.)
+│   ├── components/           # UI components (Sidebar, Popovers, etc.)
 │   ├── layouts/              # BaseLayout, BlogLayout, NoteLayout
 │   ├── pages/                # File-based routes (blog, notes, tags, categories)
 │   ├── plugins/              # remark-wikilinks, rehype-embeds
-│   ├── styles/               # CSS tokens, typography, and global styles
-│   └── utils/                # backlinks, content-dir, notes, date, url
+│   └── styles/               # CSS variables, typography, and global layout
 └── astro.config.mjs
 ```
 
@@ -121,27 +193,10 @@ tags: ["architecture", "design-patterns"]
 category: "architecture"
 para: resources         # projects | areas | resources | archives (optional)
 created: 2026-08-27
+updated: 2026-08-28
 ---
 
 Notes can link to other notes seamlessly with `[[note-slug]]` or `[[note-slug|Custom Label]]`.
-```
-
-### Writing Private / Captured Notes (`content/notes/private/my-capture.md`)
-
-```markdown
----
-title: "AI Research Capture: Byzantine Faults"
-description: "Raw capture exploring consensus under untrusted node assumptions."
-stage: captured         # captured notes are automatically private
-para: resources
-source: "Claude 3.7 research session"
-tags: ["consensus", "byzantine"]
-created: 2026-08-27
-private: true
----
-
-Private notes live in `content/notes/private/` and are excluded from all public listings.
-On Cloudflare Pages, accessing `/notes/private/*` requires HTTP Basic Auth.
 ```
 
 ---
@@ -158,31 +213,6 @@ Breath includes zero-config HTTP Basic Auth for Cloudflare Pages:
 3. **Pipeline:** Enable `.github/workflows/cloudflare.yml.disabled` by renaming it to `cloudflare.yml` and configuring GitHub secrets (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PROJECT_NAME`, `AUTH_USER`, `AUTH_PASSWORD`).
 
 For full details, read [`content/notes/cloudflare-private-notes.md`](content/notes/cloudflare-private-notes.md).
-
----
-
-## 🤖 LLM-Wiki & AI Agent Guidelines
-
-If you use AI coding tools (Claude Code, Cursor, Aider) or knowledge graph tools like **Graphify**:
-
-- Run `/graphify` locally to build an index in `graphify-out/`.
-- `graphify-out/` is gitignored and is never deployed with the site.
-- AI subagents consult `AGENTS.md` to guarantee that references and titles from private captures never leak into public blog posts.
-
----
-
-## 📐 Architecture Decision Records (ADRs)
-
-Key architectural decisions are documented in [`docs/decisions/`](docs/decisions/):
-
-- [ADR-001](docs/decisions/ADR-001-stacked-notes.md): Andy Matuschak Stacked Notes navigation model
-- [ADR-002](docs/decisions/ADR-002-external-links-embeds.md): External Link Previews & Media Embeds
-- [ADR-003](docs/decisions/ADR-003-theme-distribution-content-separation.md): GitHub Template Distribution & Content Directory Separation
-- [ADR-004](docs/decisions/ADR-004-private-notes-auth-gated.md): Single-Build Auth-Gated Private Notes Architecture
-- [ADR-005](docs/decisions/ADR-005-link-preview-v2.md): Link Preview Popover & Media Embed Architecture
-- [ADR-006](docs/decisions/ADR-006-note-content-model.md): Note Content Model (Captured Stage, PARA, Provenance)
-- [ADR-007](docs/decisions/ADR-007-llm-wiki-local-graph.md): LLM-Wiki Local Knowledge Graph with Privacy Boundary
-- [ADR-008](docs/decisions/ADR-008-single-language-theme-scope.md): Single-Language Theme Scope & Deferred i18n
 
 ---
 

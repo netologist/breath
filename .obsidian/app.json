@@ -1,0 +1,19 @@
+{
+  "useMarkdownLinks": false,
+  "attachmentFolderPath": "public/images",
+  "newFileFolderPath": "content/notes",
+  "newFileLocation": "folder",
+  "alwaysUpdateLinks": true,
+  "livePreview": true,
+  "showFrontmatter": true,
+  "showLineNumber": false,
+  "spellcheck": false,
+  "strictLineBreaks": false,
+  "userIgnoreFilters": [
+    "node_modules/**",
+    "dist/**",
+    ".astro/**",
+    "scripts/**",
+    "src/**"
+  ]
+}

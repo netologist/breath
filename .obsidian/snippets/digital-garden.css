@@ -1,0 +1,95 @@
+/* ─────────────────────────────────────────────────────────────
+   Breath Digital Garden — Obsidian Theme Snippet
+   Matches the web theme typography, stage badges, and wikilinks.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Typography & Base ── */
+body {
+  --font-text-theme: 'Yanone Kaffeesatz', Helvetica, Arial, sans-serif;
+  --font-monospace-theme: 'JetBrains Mono', monospace;
+  --link-color: #227ce8;
+  --link-color-hover: #1558b0;
+}
+
+/* ── Digital Garden Growth Stage Badges in Properties ── */
+.metadata-property[data-property-key="stage"] .metadata-property-value {
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 1px 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Seedling Stage 🌱 */
+.metadata-property[data-property-key="stage"] .metadata-property-value:has([value="seedling"]),
+.metadata-property[data-property-key="stage"] .multi-select-pill:has([data-value="seedling"]) {
+  background-color: #f0f8f0 !important;
+  color: #2e6e4a !important;
+  border: 1px solid #b8e2b8 !important;
+}
+
+/* Budding Stage 🌿 */
+.metadata-property[data-property-key="stage"] .metadata-property-value:has([value="budding"]),
+.metadata-property[data-property-key="stage"] .multi-select-pill:has([data-value="budding"]) {
+  background-color: #fdf6e8 !important;
+  color: #c98a20 !important;
+  border: 1px solid #fae2b6 !important;
+}
+
+/* Evergreen Stage 🌲 */
+.metadata-property[data-property-key="stage"] .metadata-property-value:has([value="evergreen"]),
+.metadata-property[data-property-key="stage"] .multi-select-pill:has([data-value="evergreen"]) {
+  background-color: #eef5f1 !important;
+  color: #1e5235 !important;
+  border: 1px solid #a8d5be !important;
+}
+
+/* Captured / Private Stage 📥 */
+.metadata-property[data-property-key="stage"] .metadata-property-value:has([value="captured"]),
+.metadata-property[data-property-key="stage"] .multi-select-pill:has([data-value="captured"]) {
+  background-color: #f6f2fb !important;
+  color: #7c5cbf !important;
+  border: 1px solid #d9c7f2 !important;
+}
+
+/* ── Internal Wikilinks ── */
+.cm-s-obsidian span.cm-hmd-internal-link,
+.internal-link {
+  color: #227ce8;
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px dotted rgba(34, 124, 232, 0.4);
+}
+
+.internal-link:hover {
+  color: #1558b0;
+  text-decoration: underline;
+  border-bottom-color: #1558b0;
+}
+
+/* ── Tags ── */
+.tag, .cm-hashtag {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 0.85em;
+}
+
+.tag:hover, .cm-hashtag:hover {
+  color: var(--text-normal);
+  border-color: var(--text-accent);
+}
+
+/* ── Headings ── */
+.markdown-rendered h1,
+.markdown-rendered h2,
+.markdown-rendered h3 {
+  font-family: 'Yanone Kaffeesatz', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.markdown-rendered h1 {
+  color: #b22;
+}

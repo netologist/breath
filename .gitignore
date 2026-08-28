@@ -27,4 +27,10 @@ content/
 .DS_Store
 
 # jetbrains setting folder
+
+# Obsidian workspace and local device caches
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.obsidian/indexeddb/
 .idea/
