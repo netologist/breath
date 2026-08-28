@@ -312,18 +312,17 @@ h2.page-title {
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-md);
-  padding: 5px 0;
-  margin: 0;
+  padding: 6px 8px;
+  margin: 0 -8px;
   border-bottom: 1px dotted var(--border);
+  border-radius: var(--radius);
+  transition: background var(--transition);
 }
 .listing li:last-child {
   border-bottom: none;
 }
 .listing li:hover {
   background: var(--bg-surface);
-  margin: 0 -8px;
-  padding: 5px 8px;
-  border-radius: 2px;
 }
 .listing a {
   font-family: var(--font-sans);

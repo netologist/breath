@@ -118,16 +118,15 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
                 const d = getEffectiveDate(note, 'updated');
                 return (
                   <li class="note-list-item" data-title={note.data.title.toLowerCase()} data-tags={note.data.tags.join(' ').toLowerCase()} data-desc={(note.data.description ?? '').toLowerCase()}>
-                    <div class="note-item-main">
-                      <a href={url(`/notes/${note.id}`)} class="note-link" data-note-id={note.id}>
-                        <span class="note-bullet">·</span>
+                    <div class="note-item-header">
+                      <a href={url(`/notes/${note.id}`)} class="note-link note-title" data-note-id={note.id}>
                         <span class="note-title-text">{note.data.title}</span>
                       </a>
-                      {note.data.description && (
-                        <span class="note-item-desc">{note.data.description}</span>
-                      )}
+                      <time datetime={d.toISOString()} class="note-item-date">{formatYMD(d)}</time>
                     </div>
-                    <time datetime={d.toISOString()} class="note-item-date">{formatYMD(d)}</time>
+                    {note.data.description && (
+                      <p class="note-item-desc">{note.data.description}</p>
+                    )}
                   </li>
                 );
               })}
@@ -488,22 +487,28 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
   }
   .note-list-item {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 6px 0;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 3px;
+    padding: 6px 8px;
+    margin: 0 -8px;
     border-bottom: 1px dotted var(--border);
+    border-radius: var(--radius);
+    transition: background var(--transition);
   }
   .note-list-item:last-child {
     border-bottom: none;
   }
-  .note-item-main {
+  .note-list-item:hover {
+    background: var(--bg-surface);
+  }
+  .note-item-header {
     display: flex;
     align-items: baseline;
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
   }
   .note-link {
     font-family: var(--font-sans);
@@ -513,23 +518,23 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     font-weight: 500;
     display: inline-flex;
     align-items: baseline;
-    gap: 4px;
-    flex-shrink: 0;
+    min-width: 0;
+    flex: 1;
   }
   .note-link:hover {
     text-decoration: underline;
     color: var(--text-link-hover);
   }
-  .note-bullet {
-    color: var(--text-muted);
-    font-weight: bold;
-    user-select: none;
+  .note-title-text {
+    word-break: break-word;
   }
   .note-item-desc {
     font-family: var(--font-sans);
     font-size: var(--text-xs);
     color: var(--text-secondary);
     font-style: italic;
+    margin: 0;
+    line-height: 1.45;
   }
   .note-item-date {
     font-family: var(--font-mono);
@@ -538,19 +543,7 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     flex-shrink: 0;
     text-align: right;
     letter-spacing: 0.02em;
-  }
-  .note-bullet {
-    color: var(--text-muted);
-    font-weight: bold;
-    user-select: none;
-  }
-  .note-item-desc {
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    color: var(--text-secondary);
-    font-style: italic;
-    flex: 1;
-    min-width: 180px;
+    white-space: nowrap;
   }
   .note-item-tags {
     display: inline-flex;

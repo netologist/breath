@@ -160,11 +160,17 @@ const categories = Object.keys(byCategory).sort((a, b) =>
     align-items: baseline;
     justify-content: space-between;
     gap: 8px;
-    padding: 4px 0;
+    padding: 6px 8px;
+    margin: 0 -8px;
     border-bottom: 1px dotted var(--border);
+    border-radius: var(--radius);
+    transition: background var(--transition);
   }
   .note-item-simple:last-child {
     border-bottom: none;
+  }
+  .note-item-simple:hover {
+    background: var(--bg-surface);
   }
   .note-simple-link {
     flex: 1;
