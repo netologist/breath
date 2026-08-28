@@ -1,18 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
+import { siteConfig } from '../site.config';
+
+const { author, site } = siteConfig;
 ---
 
-<BaseLayout title="About" description="About John Doe and the Breath digital garden theme.">
+<BaseLayout title="About" description={`About ${author.name} and the ${site.title} digital garden theme.`}>
   <Sidebar />
 
   <main class="site-content">
     <h2 class="page-title">about</h2>
-    <p class="page-desc">Engineer, tinkerer, and systems thinker.</p>
+    {author.bio && <p class="page-desc">{author.bio}</p>}
 
     <div class="about-prose prose">
       <p>
-        Hi, I'm <strong>John Doe</strong>. I build scalable backend systems, distributed architectures, and developer tools.
+        Hi, I'm <strong>{author.name}</strong>. I build scalable backend systems, distributed architectures, and developer tools.
       </p>
 
       <p>

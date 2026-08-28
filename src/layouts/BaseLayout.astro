@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { siteConfig } from '../site.config';
 import { url } from '../utils/url';
 
 interface Props {
@@ -10,12 +11,12 @@ interface Props {
 
 const {
   title,
-  description = 'A minimalist digital garden and engineering blog.',
-  image = '/og-default.png',
+  description = siteConfig.site.description,
+  image = siteConfig.site.defaultImage ?? '/og-default.png',
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://netologist.github.io/breath/');
-const siteName = 'Breath';
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? siteConfig.site.url ?? 'https://netologist.github.io/breath/');
+const siteName = siteConfig.site.title;
 const faviconUrl = url('/favicon.svg');
 const rssUrl = url('/rss.xml');
 ---
@@ -30,7 +31,7 @@ const rssUrl = url('/rss.xml');
 
     <title>{title === siteName ? `${title} — Digital Garden & Engineering Blog` : `${title} — ${siteName}`}</title>
     <meta name="description" content={description} />
-    <meta name="author" content="John Doe" />
+    <meta name="author" content={siteConfig.author.name} />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />

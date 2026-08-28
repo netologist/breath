@@ -3,6 +3,9 @@ dist/
 # generated types
 .astro/
 
+# build-time generated metadata cache
+public/og-cache.json
+
 # dependencies
 node_modules/
 
