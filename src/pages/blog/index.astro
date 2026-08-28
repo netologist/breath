@@ -10,29 +10,20 @@ const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 const { years: updatedYears, byYear: updatedByYear } = groupByYear(allPosts, 'updated');
 const { years: createdYears, byYear: createdByYear } = groupByYear(allPosts, 'created');
 
-// Tag cloud
-const tagCounts: Record<string, number> = {};
-allPosts.forEach(p => p.data.tags.forEach(t => { tagCounts[t] = (tagCounts[t] ?? 0) + 1; }));
-const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
 ---
 
 <BaseLayout title="Posts" description="Articles on software engineering, distributed systems, and design.">
   <Sidebar />
 
   <main class="site-content">
-    <h2 class="page-title">posts <span class="count">{allPosts.length}</span></h2>
-    <p class="page-desc">Essays, engineering guides, and deep technical notes.</p>
-
-    <div class="posts-controls">
-      {tags.length > 0 && (
-        <div class="tag-cloud">
-          {tags.map(([tag, count]) => (
-            <a href={url(`/tags/${tag}`)} class="tag">
-              {tag} <span class="tag-count">({count})</span>
-            </a>
-          ))}
-        </div>
-      )}
+    <div class="posts-header-bar">
+      <div>
+        <h2 class="page-title">
+          posts
+          <span class="count">{allPosts.length}</span>
+        </h2>
+        <p class="page-desc">Essays, engineering guides, and deep technical notes.</p>
+      </div>
 
       <div class="sort-switch">
         <span class="sort-label">Sort:</span>
@@ -40,7 +31,6 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
         <button id="sort-by-created" class="sort-btn" type="button" aria-pressed="false">Created</button>
       </div>
     </div>
-
     <!-- Default: Grouped by Updated Date -->
     <div id="posts-by-updated" class="posts-group-container">
       {updatedYears.map(year => (
@@ -114,21 +104,19 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
 </script>
 
 <style>
+  .posts-header-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-lg);
+  }
   .page-title {
     margin-bottom: 0.35em;
   }
-  .posts-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: var(--space-xl);
-  }
-  .tag-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35em;
+  .page-desc {
+    margin-bottom: 0;
   }
   .sort-switch {
     display: flex;
@@ -137,14 +125,19 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     font-family: var(--font-sans);
     font-size: var(--text-xs);
     color: var(--text-muted);
+    margin-top: 6px;
   }
   .sort-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 2px 8px;
+    padding: 3px 8px 1px 8px;
     font-family: var(--font-sans);
     font-size: var(--text-xs);
+    line-height: 1;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--transition);

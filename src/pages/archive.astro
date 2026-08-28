@@ -125,12 +125,16 @@ const { years: createdYears, byYear: createdByYear } = groupByYear(allPosts, 'cr
     margin-top: 6px;
   }
   .sort-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 2px 8px;
+    padding: 3px 8px 1px 8px;
     font-family: var(--font-sans);
     font-size: var(--text-xs);
+    line-height: 1;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--transition);
