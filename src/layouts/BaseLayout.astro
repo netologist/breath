@@ -87,6 +87,20 @@ const rssUrl = url('/rss.xml');
   const BASE = window.location.pathname.startsWith('/breath') ? '/breath' : '';
 
   // ──────────────────────────────────────────────────
+  // Navigation origin tracker for breadcrumbs
+  // ──────────────────────────────────────────────────
+  try {
+    const rawPath = window.location.pathname;
+    let cleanPath = BASE && rawPath.startsWith(BASE) ? rawPath.slice(BASE.length) : rawPath;
+    if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
+    if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+
+    if (!cleanPath.startsWith('/blog/')) {
+      sessionStorage.setItem('breath_nav_origin', cleanPath);
+    }
+  } catch (e) {}
+
+  // ──────────────────────────────────────────────────
   // 1. External link ↗ indicator & target="_blank"
   // ──────────────────────────────────────────────────
   function markExternalLinks() {
