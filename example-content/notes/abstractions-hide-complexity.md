@@ -28,6 +28,15 @@ Deep Module:
 
 When an abstraction merely renames underlying operations or requires the caller to manage low-level state transitions, it is a *shallow abstraction*. Shallow abstractions add indirection without reducing cognitive load.
 
+### Deep vs. Shallow Abstractions
+
+| Characteristic | Deep Module | Shallow Module |
+| :--- | :--- | :--- |
+| **Interface Surface** | Small, simple, intuitive | Large, verbose, complex |
+| **Implementation** | Extensive hidden logic | Thin wrapper, pass-through |
+| **Cognitive Load** | Low (hides complexity) | High (exposes internals) |
+| **Maintenance** | Isolated changes inside | Leaks changes to all callers |
+
 Key tenets:
 - **Hide implementation details:** Callers shouldn't need to know internal caching strategies or lock orderings.
 - **Provide sensible defaults:** Common use cases should require zero configuration.

@@ -56,7 +56,18 @@ HTTP Request Context (Cancelled on client disconnect)
  └── Cache Lookup Context (Cancelled immediately)
 ```
 
-## 3. Values in Context: What Belongs There?
+## 3. Context Constructors at a Glance
+
+| Constructor | Cancellation Trigger | Primary Use Case |
+| :--- | :--- | :--- |
+| `context.Background()` | Never | Root of all request and job execution trees |
+| `context.TODO()` | Never | Development placeholder or un-refactored paths |
+| `context.WithCancel()` | Explicit `cancel()` call | Graceful shutdown, user cancellation |
+| `context.WithTimeout()` | Duration elapsed or explicit | Outbound HTTP calls, database queries |
+| `context.WithDeadline()` | Absolute timestamp reached | Hard SLA cutoffs, scheduled batch jobs |
+| `context.WithValue()` | Inherited from parent | Trace IDs, request authentication tokens |
+
+## 4. Values in Context: What Belongs There?
 
 Only request-scoped metadata belongs in `context.WithValue`:
 - **Good:** Trace IDs, authenticated user claims, correlation IDs.
