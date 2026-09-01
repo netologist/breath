@@ -31,8 +31,6 @@ export async function getStaticPaths() {
 }
 
 const { category, posts, notes } = Astro.props;
-
-
 ---
 
 <BaseLayout title={`${category} — Category`} description={`Articles and notes in category ${category}.`}>
@@ -44,7 +42,7 @@ const { category, posts, notes } = Astro.props;
         <a href={url('/categories')}>← All Categories</a>
       </div>
       <h2 class="page-title">
-        <span class="cat-label">Category:</span> {category}
+        {category}
         <span class="count">{posts.length + notes.length}</span>
       </h2>
     </div>
@@ -58,11 +56,11 @@ const { category, posts, notes } = Astro.props;
         </h3>
         <ul class="listing">
           {posts.map(post => {
-            const d = getEffectiveDate(post, 'updated');
+            const d = post.data.updated || post.data.date;
             return (
               <li>
                 <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
-                <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                {d && <time datetime={d.toISOString()}>{formatYMD(d)}</time>}
               </li>
             );
           })}
@@ -79,14 +77,14 @@ const { category, posts, notes } = Astro.props;
         </h3>
         <ul class="listing note-listing">
           {notes.map(note => {
-            const d = getEffectiveDate(note, 'updated');
+            const d = note.data.updated || note.data.created;
             return (
               <li>
                 <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
                   {stageLabel[note.data.stage]}
                 </span>
                 <a href={url(`/notes/${note.id}`)}>{note.data.title}</a>
-                <time datetime={d.toISOString()}>{formatYMD(d)}</time>
+                {d && <time datetime={d.toISOString()}>{formatYMD(d)}</time>}
               </li>
             );
           })}
@@ -118,10 +116,6 @@ const { category, posts, notes } = Astro.props;
     color: var(--text-link);
     text-decoration: underline;
   }
-  .cat-label {
-    color: var(--text-muted);
-    font-weight: 400;
-  }
   .cat-section {
     margin-bottom: var(--space-xl);
   }
@@ -138,6 +132,11 @@ const { category, posts, notes } = Astro.props;
   }
   .section-icon {
     font-size: 0.9em;
+  }
+  .section-count {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: var(--text-sm);
   }
   .stage-badge-small {
     display: inline-flex;

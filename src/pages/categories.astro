@@ -3,36 +3,35 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { url } from '../utils/url';
-import { formatYMD, getEffectiveDate, sortByDate } from '../utils/date';
-import { isPrivateNote, stageLabel, stageCls } from '../utils/notes';
+import { isPrivateNote } from '../utils/notes';
 
 const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 const allNotes = (await getCollection('notes')).filter(n => !isPrivateNote(n));
 
-interface CategoryGroup {
-  posts: typeof allPosts;
-  notes: typeof allNotes;
+interface CategoryStat {
+  name: string;
+  posts: number;
+  notes: number;
+  total: number;
 }
 
-const byCategory: Record<string, CategoryGroup> = {};
+const catMap: Record<string, CategoryStat> = {};
 
 for (const post of allPosts) {
   const cat = post.data.category ?? 'general';
-  (byCategory[cat] ??= { posts: [], notes: [] }).posts.push(post);
+  catMap[cat] ??= { name: cat, posts: 0, notes: 0, total: 0 };
+  catMap[cat].posts += 1;
+  catMap[cat].total += 1;
 }
 
 for (const note of allNotes) {
   const cat = note.data.category ?? 'general';
-  (byCategory[cat] ??= { posts: [], notes: [] }).notes.push(note);
+  catMap[cat] ??= { name: cat, posts: 0, notes: 0, total: 0 };
+  catMap[cat].notes += 1;
+  catMap[cat].total += 1;
 }
 
-const categories = Object.keys(byCategory).sort((a, b) =>
-  (byCategory[b].posts.length + byCategory[b].notes.length) -
-  (byCategory[a].posts.length + byCategory[a].notes.length)
-);
-
-
-
+const sortedCategories = Object.values(catMap).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
 ---
 
 <BaseLayout title="Categories" description="Index of all articles and evergreen notes organized by topic.">
@@ -40,171 +39,85 @@ const categories = Object.keys(byCategory).sort((a, b) =>
   <main class="site-content">
     <h2 class="page-title">
       categories
-      <span class="count">{categories.length}</span>
+      <span class="count">{sortedCategories.length}</span>
     </h2>
     <p class="page-desc">All articles and digital garden notes organized by category.</p>
 
-    {categories.map(cat => {
-      const group = byCategory[cat];
-      const totalCount = group.posts.length + group.notes.length;
-      return (
-        <section class="category-block">
-          <div class="category-header">
-            <h3 class="category-title">
-              <a href={url(`/categories/${cat}`)} class="category-link">{cat}</a>
-              <span class="cat-count">({totalCount} item{totalCount === 1 ? '' : 's'})</span>
-            </h3>
-          </div>
+    {sortedCategories.length === 0 && (
+      <p class="empty">No categories available yet.</p>
+    )}
 
-          <!-- Blog Posts Group -->
-          {group.posts.length > 0 && (
-            <div class="group-wrapper">
-              <h4 class="sub-group-title">
-                <span class="group-icon">📝</span> Articles ({group.posts.length})
-              </h4>
-              <ul class="listing">
-                {sortByDate(group.posts, 'updated').map(post => {
-                  const d = getEffectiveDate(post, 'updated');
-                  return (
-                    <li>
-                      <a href={url(`/blog/${post.id}`)}>{post.data.title}</a>
-                      <time datetime={d.toISOString()}>{formatYMD(d)}</time>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          <!-- Notes Group -->
-          {group.notes.length > 0 && (
-            <div class="group-wrapper">
-              <h4 class="sub-group-title">
-                <span class="group-icon">🌲</span> Notes ({group.notes.length})
-              </h4>
-              <ul class="listing note-group-listing">
-                {sortByDate(group.notes, 'updated').map(note => {
-                  const d = getEffectiveDate(note, 'updated');
-                  return (
-                    <li class="note-item-simple">
-                      <span class={`stage-badge-small ${stageCls[note.data.stage]}`}>
-                        {stageLabel[note.data.stage]}
-                      </span>
-                      <a href={url(`/notes/${note.id}`)} class="note-simple-link">{note.data.title}</a>
-                      <time datetime={d.toISOString()}>{formatYMD(d)}</time>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </section>
-      );
-    })}
+    <div class="category-grid">
+      {sortedCategories.map(c => (
+        <a href={url(`/categories/${c.name}`)} class="category-card">
+          <span class="category-name">{c.name}</span>
+          <span class="category-meta">
+            {c.posts > 0 && <span>{c.posts} article{c.posts === 1 ? '' : 's'}</span>}
+            {c.posts > 0 && c.notes > 0 && <span class="cat-sep">·</span>}
+            {c.notes > 0 && <span>{c.notes} note{c.notes === 1 ? '' : 's'}</span>}
+          </span>
+        </a>
+      ))}
+    </div>
   </main>
 </BaseLayout>
 
 <style>
-  .category-block {
-    margin-bottom: var(--space-xl);
+  .page-title { margin-bottom: 0.35em; }
+  .empty { color: var(--text-muted); font-style: italic; font-size: var(--text-sm); }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: var(--space-md);
   }
-  .category-header {
-    margin-bottom: var(--space-sm);
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--border);
-  }
-  .category-title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    margin: 0;
+
+  .category-card {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-  .category-link {
-    color: var(--text-primary);
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     text-decoration: none;
-    text-transform: capitalize;
+    transition: border-color var(--transition), transform var(--transition);
   }
-  .category-link:hover {
-    color: var(--text-link);
-    text-decoration: underline;
+
+  .category-card:hover {
+    border-color: var(--text-link);
+    transform: translateY(-1px);
+    text-decoration: none;
   }
-  .group-wrapper {
-    margin-top: var(--space-sm);
-    margin-bottom: var(--space-md);
-    padding-left: 12px;
-    border-left: 2px solid var(--border);
-  }
-  .sub-group-title {
-    font-size: 0.95rem;
+
+  .category-name {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
     font-weight: 600;
-    color: var(--text-secondary);
-    margin: 0 0 6px 0;
+    color: var(--text-primary);
+  }
+
+  .category-card:hover .category-name {
+    color: var(--text-link);
+  }
+
+  .category-meta {
     display: flex;
     align-items: center;
     gap: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .group-icon {
-    font-size: 0.85em;
-  }
-  .note-group-listing {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  .note-item-simple {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 6px 8px;
-    margin: 0 -8px;
-    border-bottom: 1px dotted var(--border);
-    border-radius: var(--radius);
-    transition: background var(--transition);
-  }
-  .note-item-simple:last-child {
-    border-bottom: none;
-  }
-  .note-item-simple:hover {
-    background: var(--bg-surface);
-  }
-  .note-simple-link {
-    flex: 1;
-    font-family: var(--font-sans);
-    font-size: var(--text-base);
-    font-weight: 500;
-    color: var(--text-primary);
-    text-decoration: none;
-  }
-  .note-simple-link:hover {
-    color: var(--text-link);
-    text-decoration: underline;
-  }
-  .note-item-simple time {
-    font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--text-muted);
-    flex-shrink: 0;
-    text-align: right;
-  }
-  .stage-badge-small {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.72rem;
-    padding: 2px 5px 0px 5px;
-    border-radius: 2px;
-    font-weight: 500;
-    line-height: 1.1;
-    flex-shrink: 0;
   }
 
-  @media (max-width: 640px) {
-    .group-wrapper {
-      padding-left: 8px;
+  .cat-sep {
+    color: var(--border);
+  }
+
+  @media (max-width: 480px) {
+    .category-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
     }
   }
 </style>

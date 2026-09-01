@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { url } from '../utils/url';
+import { slugifySeries } from '../utils/series';
 interface Props {
   title: string;
   description?: string;
@@ -159,7 +160,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
                   if (postSeries) {
                     items = [
                       { label: 'Series', href: makeUrl('/series') },
-                      { label: capitalize(postSeries), href: makeUrl('/series') }
+                      { label: capitalize(postSeries), href: makeUrl('/series/' + encodeURIComponent(slugify(postSeries))) }
                     ];
                   } else {
                     items = [
@@ -239,7 +240,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
               <span class="meta-item post-series-item">
                 <span class="meta-sep">·</span>
                 <span class="series-label">series:</span>
-                <a href={url('/series')} class="series-link">{series}</a>
+                <a href={url(`/series/${slugifySeries(series)}`)} class="series-link">{series}</a>
                 {seriesOrder && <span class="series-order">#{seriesOrder}</span>}
               </span>
             )}
@@ -269,7 +270,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
         {seriesPosts.length > 0 && (
           <aside class="series-nav">
             <p class="series-nav-title">
-              <a href={url('/series')}>« {series} »</a> series
+              <a href={url(`/series/${slugifySeries(series!)}`)}>« {series} »</a> series
             </p>
             <ol class="series-nav-list">
               {seriesPosts.map((p, i) => {

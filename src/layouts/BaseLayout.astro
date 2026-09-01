@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { siteConfig } from '../site.config';
 import { url } from '../utils/url';
+import MediaModal from '../components/MediaModal.astro';
 
 interface Props {
   title: string;
@@ -74,6 +75,9 @@ const rssUrl = url('/rss.xml');
         </div>
       </a>
     </div>
+
+    <!-- Media Lightbox / Modal Box for Mermaid Diagrams & Images -->
+    <MediaModal />
 
 <!-- ════════════════════════════════════════════════════════
      SITE-WIDE LINK & MEDIA ENGINE

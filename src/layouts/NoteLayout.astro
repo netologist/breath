@@ -369,6 +369,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       stacksEl.appendChild(col);
       // Re-run external link marker for freshly injected content
       (window as any).__markExternalLinks?.();
+      (window as any).__renderMermaid?.(col);
       // Animate in
       requestAnimationFrame(() => {
         col.classList.add('col-entering');
