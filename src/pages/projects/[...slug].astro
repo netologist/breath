@@ -1,0 +1,363 @@
+---
+import { render } from 'astro:content';
+import { getSafeCollection } from '../../utils/content-helpers';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import { url } from '../../utils/url';
+import { formatYMD } from '../../utils/date';
+
+export async function getStaticPaths() {
+  const allProjects = await getSafeCollection('projects');
+  if (allProjects.length === 0) return [];
+
+  const sorted = [...allProjects].sort((a, b) => {
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+    return b.data.date.getTime() - a.data.date.getTime();
+  });
+
+  return [
+    { params: { slug: undefined }, props: { isIndex: true, items: sorted } },
+    ...sorted.map((item) => ({
+      params: { slug: item.id },
+      props: { isIndex: false, item, items: sorted },
+    })),
+  ];
+}
+
+const { isIndex, items, item } = Astro.props;
+
+let Content: any = null;
+if (!isIndex && item) {
+  const rendered = await render(item);
+  Content = rendered.Content;
+}
+
+const statusLabels: Record<string, { label: string; cls: string }> = {
+  active: { label: 'Active', cls: 'status-active' },
+  wip: { label: 'In Progress', cls: 'status-wip' },
+  completed: { label: 'Completed', cls: 'status-completed' },
+  archived: { label: 'Archived', cls: 'status-archived' },
+};
+---
+
+{isIndex ? (
+  <BaseLayout title="Projects" description="Open source projects, libraries, tools, and experiments.">
+    <Sidebar />
+    <main class="site-content">
+      <div class="header-bar">
+        <h2 class="page-title">
+          projects
+          <span class="count">{items.length}</span>
+        </h2>
+        <p class="page-desc">Open source tools, systems, libraries, and design experiments.</p>
+      </div>
+
+      <div class="projects-grid">
+        {items.map((proj: any) => {
+          const statusInfo = statusLabels[proj.data.status] ?? statusLabels.active;
+          const targetLink = proj.data.url || proj.data.repo || url(`/projects/${proj.id}`);
+          const hasBody = Boolean(proj.body && proj.body.trim().length > 0);
+
+          return (
+            <article class={`project-card ${proj.data.featured ? 'is-featured' : ''}`}>
+              <div class="project-header">
+                <div class="project-title-row">
+                  <h3 class="project-title">
+                    <a href={targetLink}>{proj.data.title}</a>
+                  </h3>
+                  <span class={`status-badge ${statusInfo.cls}`}>{statusInfo.label}</span>
+                </div>
+                {proj.data.date && (
+                  <time class="project-date" datetime={proj.data.date.toISOString()}>
+                    {formatYMD(proj.data.date)}
+                  </time>
+                )}
+              </div>
+
+              {proj.data.description && <p class="project-desc">{proj.data.description}</p>}
+
+              {proj.data.tags && proj.data.tags.length > 0 && (
+                <div class="project-tags">
+                  {proj.data.tags.map((tag: string) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              <div class="project-links">
+                {proj.data.url && (
+                  <a href={proj.data.url} class="project-link demo-link">
+                    Live Demo ↗
+                  </a>
+                )}
+                {proj.data.repo && (
+                  <a href={proj.data.repo} class="project-link repo-link">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
+                      <path d="M9 18c-4.51 2-5-2-7-2"></path>
+                    </svg>
+                    Source Code
+                  </a>
+                )}
+                {hasBody && (
+                  <a href={url(`/projects/${proj.id}`)} class="project-link notes-link">
+                    Overview →
+                  </a>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </main>
+  </BaseLayout>
+) : (
+  <BaseLayout title={item.data.title} description={item.data.description}>
+    <Sidebar />
+    <main class="site-content">
+      <div class="breadcrumb">
+        <a href={url('/projects')}>← back to projects</a>
+      </div>
+
+      <header class="detail-header">
+        <h1 class="page-title">{item.data.title}</h1>
+        {item.data.description && <p class="page-desc">{item.data.description}</p>}
+
+        <div class="detail-meta">
+          {item.data.status && (
+            <span class={`status-badge ${statusLabels[item.data.status]?.cls}`}>
+              {statusLabels[item.data.status]?.label}
+            </span>
+          )}
+          {item.data.date && (
+            <time class="detail-date" datetime={item.data.date.toISOString()}>
+              {formatYMD(item.data.date)}
+            </time>
+          )}
+        </div>
+
+        <div class="detail-actions">
+          {item.data.url && (
+            <a href={item.data.url} class="btn-action">
+              Website / Demo ↗
+            </a>
+          )}
+          {item.data.repo && (
+            <a href={item.data.repo} class="btn-action">
+              Repository ↗
+            </a>
+          )}
+        </div>
+
+        {item.data.tags && item.data.tags.length > 0 && (
+          <div class="project-tags">
+            {item.data.tags.map((t: string) => (
+              <span class="tag">{t}</span>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <hr class="detail-separator" />
+
+      {Content && (
+        <article class="prose">
+          <Content />
+        </article>
+      )}
+    </main>
+  </BaseLayout>
+)}
+
+<style>
+  .header-bar {
+    margin-bottom: var(--space-xl);
+  }
+
+  .projects-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .project-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-md) var(--space-lg);
+    transition: border-color var(--transition);
+  }
+
+  .project-card:hover {
+    border-color: var(--border-hover);
+  }
+
+  .project-card.is-featured {
+    border-left: 3px solid #b22;
+  }
+
+  .project-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  .project-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .project-title {
+    font-size: var(--text-md);
+    margin: 0;
+  }
+
+  .project-title a {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  .project-title a:hover {
+    color: var(--text-link);
+    text-decoration: underline;
+  }
+
+  .project-date {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .status-badge {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    padding: 1px 6px;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .status-active {
+    background: #eef7ee;
+    color: #2b782b;
+    border-color: #c9e8c9;
+  }
+
+  .status-wip {
+    background: #fff8e8;
+    color: #9c6c10;
+    border-color: #fae0a6;
+  }
+
+  .status-completed {
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    border-color: var(--border);
+  }
+
+  .status-archived {
+    background: #f5f5f5;
+    color: #888;
+    border-color: #ddd;
+  }
+
+  .project-desc {
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+    margin: var(--space-xs) 0 var(--space-sm);
+    line-height: 1.5;
+  }
+
+  .project-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: var(--space-sm) 0;
+  }
+
+  .project-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  .project-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-link);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .project-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Detail view */
+  .breadcrumb {
+    margin-bottom: var(--space-md);
+    font-size: var(--text-sm);
+  }
+
+  .breadcrumb a {
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--text-link);
+    text-decoration: underline;
+  }
+
+  .detail-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
+
+  .detail-date {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin: var(--space-md) 0;
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: all var(--transition);
+  }
+
+  .btn-action:hover {
+    border-color: var(--border-hover);
+    color: var(--text-link);
+    text-decoration: none;
+  }
+
+  .detail-separator {
+    margin: var(--space-lg) 0;
+  }
+</style>

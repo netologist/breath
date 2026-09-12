@@ -1,0 +1,360 @@
+---
+import { render } from 'astro:content';
+import { getSafeCollection } from '../../utils/content-helpers';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import EmbedPreview from '../../components/EmbedPreview.astro';
+import { url } from '../../utils/url';
+import { formatYMD } from '../../utils/date';
+
+export async function getStaticPaths() {
+  const allTalks = await getSafeCollection('talks');
+  if (allTalks.length === 0) return [];
+
+  const sorted = [...allTalks].sort((a, b) => {
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+    return b.data.date.getTime() - a.data.date.getTime();
+  });
+
+  return [
+    { params: { slug: undefined }, props: { isIndex: true, items: sorted } },
+    ...sorted.map((item) => ({
+      params: { slug: item.id },
+      props: { isIndex: false, item, items: sorted },
+    })),
+  ];
+}
+
+const { isIndex, items, item } = Astro.props;
+
+let Content: any = null;
+if (!isIndex && item) {
+  const rendered = await render(item);
+  Content = rendered.Content;
+}
+---
+
+{isIndex ? (
+  <BaseLayout title="Talks" description="Conference presentations, technical talks, and slide decks.">
+    <Sidebar />
+    <main class="site-content">
+      <div class="header-bar">
+        <h2 class="page-title">
+          talks
+          <span class="count">{items.length}</span>
+        </h2>
+        <p class="page-desc">Conference presentations, tech talks, recordings, and slide decks.</p>
+      </div>
+
+      <div class="talks-grid">
+        {items.map((talk: any) => {
+          const hasBody = Boolean(talk.body && talk.body.trim().length > 0);
+          return (
+            <article class={`talk-card ${talk.data.featured ? 'is-featured' : ''}`}>
+              <div class="talk-header">
+                <div class="talk-meta-row">
+                  {talk.data.event && <span class="event-badge">{talk.data.event}</span>}
+                  {talk.data.location && <span class="location-label">📍 {talk.data.location}</span>}
+                </div>
+                {talk.data.date && (
+                  <time class="talk-date" datetime={talk.data.date.toISOString()}>
+                    {formatYMD(talk.data.date)}
+                  </time>
+                )}
+              </div>
+
+              <h3 class="talk-title">
+                {hasBody ? (
+                  <a href={url(`/talks/${talk.id}`)}>{talk.data.title}</a>
+                ) : (
+                  <span>{talk.data.title}</span>
+                )}
+              </h3>
+
+              {talk.data.description && <p class="talk-desc">{talk.data.description}</p>}
+
+              <!-- Rich Media Preview (YouTube / SlideShare / SpeakerDeck) -->
+              {(talk.data.url || talk.data.slidesUrl) && (
+                <div class="media-preview-section">
+                  <EmbedPreview
+                    url={talk.data.url}
+                    slidesUrl={talk.data.slidesUrl}
+                    title={talk.data.title}
+                  />
+                </div>
+              )}
+
+              {talk.data.tags && talk.data.tags.length > 0 && (
+                <div class="talk-tags">
+                  {talk.data.tags.map((tag: string) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              <div class="talk-links">
+                {talk.data.url && (
+                  <a href={talk.data.url} target="_blank" rel="noopener noreferrer" class="talk-link">
+                    Watch Recording ↗
+                  </a>
+                )}
+                {talk.data.slidesUrl && (
+                  <a href={talk.data.slidesUrl} target="_blank" rel="noopener noreferrer" class="talk-link">
+                    Slide Deck ↗
+                  </a>
+                )}
+                {hasBody && (
+                  <a href={url(`/talks/${talk.id}`)} class="talk-link notes-link">
+                    Talk Notes →
+                  </a>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </main>
+  </BaseLayout>
+) : (
+  <BaseLayout title={item.data.title} description={item.data.description}>
+    <Sidebar />
+    <main class="site-content">
+      <div class="breadcrumb">
+        <a href={url('/talks')}>← back to talks</a>
+      </div>
+
+      <header class="detail-header">
+        <h1 class="page-title">{item.data.title}</h1>
+        {item.data.description && <p class="page-desc">{item.data.description}</p>}
+
+        <div class="detail-meta">
+          {item.data.event && <span class="event-badge">{item.data.event}</span>}
+          {item.data.location && <span class="location-label">📍 {item.data.location}</span>}
+          {item.data.date && (
+            <time class="detail-date" datetime={item.data.date.toISOString()}>
+              {formatYMD(item.data.date)}
+            </time>
+          )}
+        </div>
+
+        {(item.data.url || item.data.slidesUrl) && (
+          <div class="media-preview-section">
+            <EmbedPreview
+              url={item.data.url}
+              slidesUrl={item.data.slidesUrl}
+              title={item.data.title}
+            />
+          </div>
+        )}
+
+        <div class="detail-actions">
+          {item.data.url && (
+            <a href={item.data.url} target="_blank" rel="noopener noreferrer" class="btn-action">
+              Watch Recording ↗
+            </a>
+          )}
+          {item.data.slidesUrl && (
+            <a href={item.data.slidesUrl} target="_blank" rel="noopener noreferrer" class="btn-action">
+              Slide Deck ↗
+            </a>
+          )}
+        </div>
+
+        {item.data.tags && item.data.tags.length > 0 && (
+          <div class="talk-tags">
+            {item.data.tags.map((t: string) => (
+              <span class="tag">{t}</span>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <hr class="detail-separator" />
+
+      {Content && (
+        <article class="prose">
+          <Content />
+        </article>
+      )}
+    </main>
+  </BaseLayout>
+)}
+
+<style>
+  .header-bar {
+    margin-bottom: var(--space-xl);
+  }
+
+  .talks-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+
+  .talk-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-md) var(--space-lg);
+    transition: border-color var(--transition);
+  }
+
+  .talk-card:hover {
+    border-color: var(--border-hover);
+  }
+
+  .talk-card.is-featured {
+    border-left: 3px solid #b22;
+  }
+
+  .talk-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  .talk-meta-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .event-badge {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    padding: 1px 7px;
+    border-radius: var(--radius);
+    color: var(--text-primary);
+  }
+
+  .location-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .talk-date {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .talk-title {
+    font-size: var(--text-lg);
+    margin: var(--space-xs) 0;
+    color: var(--text-primary);
+  }
+
+  .talk-title a {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  .talk-title a:hover {
+    color: var(--text-link);
+    text-decoration: underline;
+  }
+
+  .talk-desc {
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+    margin: var(--space-xs) 0 var(--space-sm);
+    line-height: 1.5;
+  }
+
+  .media-preview-section {
+    margin: var(--space-sm) 0;
+  }
+
+  .talk-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: var(--space-sm) 0;
+  }
+
+  .talk-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  .talk-link {
+    color: var(--text-link);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .talk-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Detail styles */
+  .breadcrumb {
+    margin-bottom: var(--space-md);
+    font-size: var(--text-sm);
+  }
+
+  .breadcrumb a {
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--text-link);
+    text-decoration: underline;
+  }
+
+  .detail-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin: var(--space-xs) 0 var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .detail-date {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin: var(--space-md) 0;
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: all var(--transition);
+  }
+
+  .btn-action:hover {
+    border-color: var(--border-hover);
+    color: var(--text-link);
+    text-decoration: none;
+  }
+
+  .detail-separator {
+    margin: var(--space-lg) 0;
+  }
+</style>

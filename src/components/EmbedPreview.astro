@@ -1,0 +1,132 @@
+---
+interface Props {
+  url?: string;
+  slidesUrl?: string;
+  title?: string;
+}
+
+const { url, slidesUrl, title = 'Media Preview' } = Astro.props;
+
+function getYouTubeId(u?: string): string | null {
+  if (!u) return null;
+  const m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/);
+  return m ? m[1] : null;
+}
+
+function getVimeoId(u?: string): string | null {
+  if (!u) return null;
+  const m = u.match(/vimeo\.com\/(\d+)/);
+  return m ? m[1] : null;
+}
+
+function getSlideShareEmbedUrl(u?: string): string | null {
+  if (!u) return null;
+  if (u.includes('slideshare.net/slideshow/embed_code')) return u;
+  const keyMatch = u.match(/slideshare\.net\/.*key\/([a-zA-Z0-9]+)/);
+  if (keyMatch) return `https://www.slideshare.net/slideshow/embed_code/key/${keyMatch[1]}`;
+  return null;
+}
+
+function getSpeakerDeckEmbedUrl(u?: string): string | null {
+  if (!u) return null;
+  if (u.includes('speakerdeck.com/player/')) return u;
+  return null;
+}
+
+function getGoogleSlidesEmbedUrl(u?: string): string | null {
+  if (!u) return null;
+  if (u.includes('docs.google.com/presentation')) {
+    if (u.includes('/embed')) return u;
+    return u.replace(/\/edit.*$/, '/embed').replace(/\/pub.*$/, '/embed');
+  }
+  return null;
+}
+
+const ytId = getYouTubeId(url);
+const vimeoId = getVimeoId(url);
+const ssEmbedUrl = getSlideShareEmbedUrl(slidesUrl) || getSlideShareEmbedUrl(url);
+const sdEmbedUrl = getSpeakerDeckEmbedUrl(slidesUrl) || getSpeakerDeckEmbedUrl(url);
+const gsEmbedUrl = getGoogleSlidesEmbedUrl(slidesUrl) || getGoogleSlidesEmbedUrl(url);
+
+const hasVideoEmbed = Boolean(ytId || vimeoId);
+const hasSlideEmbed = Boolean(ssEmbedUrl || sdEmbedUrl || gsEmbedUrl);
+---
+
+{hasVideoEmbed && (
+  <div class="embed-container video-embed">
+    {ytId && (
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${ytId}`}
+        title={`${title} (YouTube)`}
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      />
+    )}
+    {vimeoId && (
+      <iframe
+        src={`https://player.vimeo.com/video/${vimeoId}`}
+        title={`${title} (Vimeo)`}
+        loading="lazy"
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowfullscreen
+      />
+    )}
+  </div>
+)}
+
+{hasSlideEmbed && (
+  <div class="embed-container slide-embed">
+    {ssEmbedUrl && (
+      <iframe
+        src={ssEmbedUrl}
+        title={`${title} (SlideShare)`}
+        loading="lazy"
+        allowfullscreen
+      />
+    )}
+    {sdEmbedUrl && (
+      <iframe
+        src={sdEmbedUrl}
+        title={`${title} (Speaker Deck)`}
+        loading="lazy"
+        allowfullscreen
+      />
+    )}
+    {gsEmbedUrl && (
+      <iframe
+        src={gsEmbedUrl}
+        title={`${title} (Google Slides)`}
+        loading="lazy"
+        allowfullscreen
+      />
+    )}
+  </div>
+)}
+
+<style>
+  .embed-container {
+    position: relative;
+    width: 100%;
+    margin: var(--space-sm) 0;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+  }
+
+  .video-embed {
+    aspect-ratio: 16 / 9;
+  }
+
+  .slide-embed {
+    aspect-ratio: 16 / 10;
+  }
+
+  .embed-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+</style>

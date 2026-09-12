@@ -17,10 +17,10 @@
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { blogDirPath, notesDirPath } from '../src/utils/content-dir.mjs';
+import { blogDirPath, notesDirPath, projectsDirPath, talksDirPath, publicationsDirPath } from '../src/utils/content-dir.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const contentDirs = [blogDirPath, notesDirPath];
+const contentDirs = [blogDirPath, notesDirPath, projectsDirPath, talksDirPath, publicationsDirPath];
 const outFile = join(root, 'public/og-cache.json');
 
 const TIMEOUT_MS = 8000;

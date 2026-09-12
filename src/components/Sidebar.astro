@@ -1,4 +1,5 @@
 ---
+import { getSafeCollection } from '../utils/content-helpers';
 import { siteConfig } from '../site.config';
 import { url } from '../utils/url';
 
@@ -8,6 +9,27 @@ interface Props {
 
 const { hasToc = false } = Astro.props;
 const { author, social, nav, sourceLink } = siteConfig;
+
+// Conditionally show collection links only if they have published items
+const [projectsCount, talksCount, publicationsCount] = await Promise.all([
+  getSafeCollection('projects').then((c) => c.length),
+  getSafeCollection('talks').then((c) => c.length),
+  getSafeCollection('publications').then((c) => c.length),
+]);
+
+const collectionCounts: Record<string, number> = {
+  '/projects': projectsCount,
+  '/talks': talksCount,
+  '/publications': publicationsCount,
+};
+
+const visibleNav = nav.filter((item) => {
+  const cleanHref = item.href.replace(/\/+$/, '') || '/';
+  if (cleanHref in collectionCounts) {
+    return collectionCounts[cleanHref] > 0;
+  }
+  return true;
+});
 
 const resolveHref = (href: string) =>
   href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')
@@ -182,7 +204,7 @@ const isActive = (href: string) => {
 
   <nav class="sidebar-nav" aria-label="Main navigation">
     <ul>
-      {nav.map(({ href, label, external }) => {
+      {visibleNav.map(({ href, label, external }) => {
         const resolved = resolveHref(href);
         const isExt = external || resolved.startsWith('http');
         return (
