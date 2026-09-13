@@ -302,10 +302,35 @@ const rssUrl = url('/rss.xml');
   });
 
   // ──────────────────────────────────────────────────
-  // 3. Twitter / X widget loader
   // ──────────────────────────────────────────────────
+  // 3. Twitter / X widget loader with dark theme support
+  // ──────────────────────────────────────────────────
+  function isCurrentDarkTheme(): boolean {
+    const doc = document.documentElement;
+    if (doc.classList.contains('dark') || doc.getAttribute('data-theme') === 'dark') return true;
+    if (doc.classList.contains('light') || doc.getAttribute('data-theme') === 'light') return false;
+    try {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark') return true;
+      if (stored === 'light') return false;
+      const match = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+      if (match) return decodeURIComponent(match[1]) === 'dark';
+    } catch (e) {}
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  function syncTwitterThemeAttributes(targetTheme?: 'dark' | 'light') {
+    const theme = targetTheme || (isCurrentDarkTheme() ? 'dark' : 'light');
+    document.querySelectorAll<HTMLElement>('.twitter-tweet').forEach((el) => {
+      el.setAttribute('data-theme', theme);
+    });
+  }
+
   function loadTwitterWidgets() {
-    if (!document.querySelector('.twitter-tweet')) return;
+    if (!document.querySelector('.twitter-tweet') && !document.querySelector('.embed-x')) return;
+
+    syncTwitterThemeAttributes();
+
     if ((window as any).twttr?.widgets) {
       (window as any).twttr.widgets.load();
       return;
@@ -318,6 +343,50 @@ const rssUrl = url('/rss.xml');
     script.charset = 'utf-8';
     document.head.appendChild(script);
   }
+
+  function reloadTwitterWidgets(isDark?: boolean) {
+    const embeds = document.querySelectorAll<HTMLElement>('.embed-x');
+    if (!embeds.length) return;
+
+    const dark = typeof isDark === 'boolean' ? isDark : isCurrentDarkTheme();
+    const themeName = dark ? 'dark' : 'light';
+
+    embeds.forEach((container) => {
+      let tweetUrl = container.dataset.tweetUrl;
+      if (!tweetUrl) {
+        const a = container.querySelector<HTMLAnchorElement>('a');
+        if (a && a.href) {
+          tweetUrl = a.href;
+          container.dataset.tweetUrl = tweetUrl;
+        } else {
+          const iframe = container.querySelector<HTMLIFrameElement>('iframe');
+          if (iframe?.src) {
+            const m = iframe.src.match(/id=(\d+)/);
+            if (m) tweetUrl = `https://x.com/i/status/${m[1]}`;
+          }
+        }
+      }
+      if (!tweetUrl) return;
+
+      container.innerHTML = `
+        <blockquote class="twitter-tweet" data-theme="${themeName}" data-dnt="true">
+          <a href="${tweetUrl}">${tweetUrl}</a>
+        </blockquote>
+      `;
+    });
+
+    if ((window as any).twttr?.widgets) {
+      (window as any).twttr.widgets.load();
+    } else {
+      loadTwitterWidgets();
+    }
+  }
+
+  // Listen for dynamic theme changes from ThemeToggle
+  document.addEventListener('theme-changed', (e: any) => {
+    const isDark = e?.detail?.isDark ?? isCurrentDarkTheme();
+    reloadTwitterWidgets(isDark);
+  });
 
   // ── Boot ──
   function boot() {
@@ -472,6 +541,59 @@ const rssUrl = url('/rss.xml');
   }
   .embed-x .twitter-tweet {
     margin: 0 auto !important;
+  }
+
+  /* Ensure tweet widget iframe and container have seamless dark/light rounded corners with no white bleed */
+  .embed-x .twitter-tweet-rendered,
+  .embed-x iframe {
+    border-radius: 13px !important;
+    overflow: hidden !important;
+    background-color: transparent !important;
+    transform: translateZ(0);
+  }
+
+  /* Unrendered / loading fallback card for Twitter embed */
+  .embed-x blockquote.twitter-tweet:not(.twitter-tweet-rendered) {
+    display: block;
+    max-width: 550px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 16px 20px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.5;
+  }
+  .embed-x blockquote.twitter-tweet:not(.twitter-tweet-rendered) a {
+    color: var(--text-link);
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .embed-x blockquote.twitter-tweet:not(.twitter-tweet-rendered) a:hover {
+    text-decoration: underline;
+  }
+
+  /* Dark theme overrides for external link popover and Twitter embeds */
+  html.dark .embed-x iframe,
+  [data-theme="dark"] .embed-x iframe {
+    color-scheme: dark;
+    background-color: transparent !important;
+  }
+  html.dark .embed-x .twitter-tweet-rendered,
+  [data-theme="dark"] .embed-x .twitter-tweet-rendered {
+    background-color: transparent !important;
+  }
+  html.dark .ext-popover,
+  [data-theme="dark"] .ext-popover {
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.55));
+  }
+  html.dark .ext-popover-card,
+  [data-theme="dark"] .ext-popover-card {
+    background: var(--bg-surface);
+    border-color: var(--border);
   }
 
   @media (max-width: 768px) {

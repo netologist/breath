@@ -81,7 +81,10 @@ export default function rehypeEmbeds() {
           embed = {
             type: 'element',
             tagName: 'div',
-            properties: { className: ['embed-wrap', 'embed-x'] },
+            properties: {
+              className: ['embed-wrap', 'embed-x'],
+              'data-tweet-url': href,
+            },
             children: [
               {
                 type: 'element',

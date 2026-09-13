@@ -2,9 +2,10 @@
 interface Props {
   class?: string;
   showLabel?: boolean;
+  showIcon?: boolean;
 }
 
-const { class: className = '', showLabel = false } = Astro.props;
+const { class: className = '', showLabel = false, showIcon = true } = Astro.props;
 ---
 
 <button
@@ -13,7 +14,8 @@ const { class: className = '', showLabel = false } = Astro.props;
   aria-label="Toggle dark mode"
   title="Toggle dark / light theme"
 >
-  <span class="theme-icon-wrap">
+  {showIcon && (
+    <span class="theme-icon-wrap">
     <!-- Sun Icon (shown in dark mode to switch to light) -->
     <svg
       class="theme-icon sun-icon"
@@ -56,6 +58,7 @@ const { class: className = '', showLabel = false } = Astro.props;
       <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
     </svg>
   </span>
+  )}
 
   {showLabel && (
     <span class="theme-text">
@@ -198,14 +201,16 @@ const { class: className = '', showLabel = false } = Astro.props;
     cursor: pointer;
     color: var(--text-muted);
     border-radius: var(--radius);
-    transition: color var(--transition), background-color var(--transition), transform 0.15s ease;
+    transition: color var(--transition);
     line-height: 1;
     user-select: none;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
   }
 
   .theme-toggle:hover {
     color: var(--text-link);
-    transform: rotate(12deg);
   }
 
   .theme-toggle:focus-visible {
@@ -239,9 +244,13 @@ const { class: className = '', showLabel = false } = Astro.props;
     font-size: inherit;
     font-family: inherit;
     font-style: inherit;
-    line-height: 1;
-    margin-left: 6px;
+    line-height: inherit;
+    margin-left: 0;
     white-space: nowrap;
+  }
+
+  .theme-icon-wrap + .theme-text {
+    margin-left: 6px;
   }
 
   .sun-label {
