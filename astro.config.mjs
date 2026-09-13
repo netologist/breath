@@ -12,7 +12,10 @@ export default defineConfig({
     remarkPlugins: [remarkWikilinks, remarkMermaid],
     rehypePlugins: [rehypeEmbeds],
     shikiConfig: {
-      theme: 'github-light',
+      themes: {
+        light: 'github-light',
+        dark: 'nord',
+      },
       wrap: true,
     },
   },

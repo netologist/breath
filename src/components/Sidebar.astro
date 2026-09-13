@@ -2,6 +2,7 @@
 import { getSafeCollection } from '../utils/content-helpers';
 import { siteConfig } from '../site.config';
 import { url } from '../utils/url';
+import ThemeToggle from './ThemeToggle.astro';
 
 interface Props {
   hasToc?: boolean;
@@ -75,8 +76,9 @@ const isActive = (href: string) => {
     </a>
   </div>
 
-  {hasToc && (
-    <div class="mobile-header-right">
+  <div class="mobile-header-right">
+    <ThemeToggle class="mobile-theme-btn" />
+    {hasToc && (
       <button
         id="mobile-toc-btn"
         class="mobile-toc-btn"
@@ -95,8 +97,8 @@ const isActive = (href: string) => {
         </svg>
         <span class="mobile-toc-label">Contents</span>
       </button>
-    </div>
-  )}
+    )}
+  </div>
 </header>
 
 <!-- Mobile Sidebar Backdrop Overlay -->
@@ -106,17 +108,20 @@ const isActive = (href: string) => {
 <aside id="sidebar-drawer" class="sidebar" aria-label="Site Navigation">
   <div class="sidebar-drawer-header">
     <span class="sidebar-drawer-title">Menu</span>
-    <button
-      id="sidebar-close-btn"
-      class="sidebar-close-btn"
-      type="button"
-      aria-label="Close menu"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
+    <div class="sidebar-drawer-actions">
+      <ThemeToggle class="drawer-theme-btn" />
+      <button
+        id="sidebar-close-btn"
+        class="sidebar-close-btn"
+        type="button"
+        aria-label="Close menu"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="sidebar-identity">
@@ -220,9 +225,12 @@ const isActive = (href: string) => {
           </li>
         );
       })}
+      <li class="sidebar-meta-item theme-item">
+        <ThemeToggle class="sidebar-meta-link sidebar-theme-toggle" showLabel />
+      </li>
       {sourceLink && (
-        <li class="source-item">
-          <a href={sourceLink.href} class="source-link" target="_blank" rel="noopener">
+        <li class="sidebar-meta-item source-item">
+          <a href={sourceLink.href} class="sidebar-meta-link source-link" target="_blank" rel="noopener">
             {sourceLink.label}
           </a>
         </li>
@@ -329,8 +337,8 @@ const isActive = (href: string) => {
   .avatar {
     display: block;
     border-radius: 6px;
-    background: #f6f2e9;
-    border: 1px solid #dfd7ca;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     object-fit: cover;
   }
 
@@ -394,13 +402,37 @@ const isActive = (href: string) => {
   .sidebar-nav a.active { color: var(--text-primary); text-decoration: none; }
   .sidebar-nav a.active { font-weight: 700; }
 
-  .source-item {
-    margin-top: 6px;
-    padding-top: 6px;
+  .sidebar-meta-item:first-of-type {
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px solid var(--border);
   }
-  .source-link { color: var(--text-muted) !important; font-style: italic; font-size: var(--text-sm) !important; }
-  .source-link:hover { color: var(--text-link) !important; }
+
+  .sidebar-meta-link {
+    color: var(--text-muted) !important;
+    font-style: italic;
+    font-size: var(--text-sm) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    transition: color var(--transition);
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1.4;
+    font-family: var(--font-sans);
+    text-align: left;
+    user-select: none;
+    width: 100%;
+    text-decoration: none;
+  }
+
+  .sidebar-meta-link:hover {
+    color: var(--text-link) !important;
+    text-decoration: none;
+    transform: none;
+  }
 
   /* ── Mobile View (<= 768px) ── */
   @media (max-width: 768px) {
@@ -437,7 +469,7 @@ const isActive = (href: string) => {
       line-height: 1;
     }
     .mobile-menu-btn:hover {
-      background: #eee;
+      background: var(--bg-surface);
       border-color: var(--border-hover);
     }
 
@@ -449,8 +481,8 @@ const isActive = (href: string) => {
     }
     .mobile-avatar {
       border-radius: 4px;
-      border: 1px solid #dfd7ca;
-      background: #f6f2e9;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
       object-fit: cover;
       display: block;
     }
@@ -469,6 +501,25 @@ const isActive = (href: string) => {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .mobile-theme-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      line-height: 1;
+    }
+    .mobile-theme-btn:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-hover);
+      color: var(--text-primary);
     }
 
     .mobile-toc-btn {
@@ -491,7 +542,7 @@ const isActive = (href: string) => {
     .mobile-toc-btn[aria-expanded="true"] {
       color: var(--text-primary);
       border-color: var(--border-hover);
-      background: #eee;
+      background: var(--bg-surface);
     }
 
     /* Mobile Drawer Backdrop */
@@ -550,6 +601,28 @@ const isActive = (href: string) => {
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
+    }
+    .sidebar-drawer-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .drawer-theme-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      line-height: 1;
+    }
+    .drawer-theme-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-hover);
     }
     .sidebar-close-btn {
       background: none;

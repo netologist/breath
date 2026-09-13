@@ -124,31 +124,65 @@
   let mermaidLoadingPromise: Promise<any> | null = null;
   let diagramCount = 0;
 
-  async function getMermaidInstance() {
-    if (mermaidLoaded && (window as any).mermaid) {
-      return (window as any).mermaid;
-    }
-    if (mermaidLoadingPromise) {
-      return mermaidLoadingPromise;
-    }
+  function isCurrentDark(): boolean {
+    return (
+      document.documentElement.classList.contains('dark') ||
+      document.documentElement.getAttribute('data-theme') === 'dark' ||
+      (!document.documentElement.classList.contains('light') &&
+        !document.documentElement.hasAttribute('data-theme') &&
+        window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+    );
+  }
 
-    mermaidLoadingPromise = (async () => {
-      try {
-        const mermaidModule = await import('mermaid');
-        const mermaid = mermaidModule.default || mermaidModule;
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'neutral',
-          securityLevel: 'loose',
-          fontFamily: 'var(--font-mono, JetBrains Mono, monospace)',
-          fontSize: 14,
-          flowchart: {
-            htmlLabels: true,
-            useMaxWidth: false,
-            curve: 'basis',
-            padding: 16,
-          },
-          themeVariables: {
+  function prepareMermaidCode(rawCode: string, isDark: boolean): string {
+    if (!isDark) return rawCode;
+    // In dark mode, adapt light-mode fills and strokes from markdown diagrams to dark translucent Nordic tones
+    return rawCode
+      .replace(/fill:#(f0f4ff|f8f9fa|ffffff|fff5f5|f0f7f2|f0f8f0|fdf6e8|eef5f1|fbfbfa)/gi, (m, hex) => {
+        const lower = hex.toLowerCase();
+        if (lower === 'f0f4ff') return 'fill:#242c38'; // subtle blue
+        if (lower === 'fff5f5') return 'fill:#382424'; // subtle red
+        if (lower === 'f0f7f2' || lower === 'f0f8f0' || lower === 'eef5f1') return 'fill:#213028'; // subtle green
+        if (lower === 'fdf6e8') return 'fill:#362d22'; // subtle orange
+        return 'fill:#222630'; // Nordic black2
+      })
+      .replace(/stroke:#(adb5bd|d0d0cc|c4c4be|d8d8d0|e4e4e0)/gi, 'stroke:#4C566A')
+      .replace(/stroke:#227ce8/gi, 'stroke:#8FBCBB');
+  }
+
+  function getMermaidConfig() {
+    const isDark = isCurrentDark();
+
+    return {
+      startOnLoad: false,
+      theme: isDark ? 'dark' : 'neutral',
+      securityLevel: 'loose',
+      fontFamily: 'var(--font-mono, JetBrains Mono, monospace)',
+      fontSize: 14,
+      flowchart: {
+        htmlLabels: true,
+        useMaxWidth: false,
+        curve: 'basis',
+        padding: 16,
+      },
+      themeVariables: isDark
+        ? {
+            fontFamily: 'var(--font-mono, JetBrains Mono, monospace)',
+            primaryColor: '#1E222A',
+            primaryTextColor: '#ECEFF4',
+            primaryBorderColor: '#3B4252',
+            lineColor: '#8FBCBB',
+            secondaryColor: '#242933',
+            tertiaryColor: '#222630',
+            mainBkg: '#1E222A',
+            nodeBorder: '#4C566A',
+            clusterBkg: '#191D24',
+            clusterBorder: '#3B4252',
+            edgeLabelBackground: '#1E222A',
+            titleColor: '#D08770',
+          }
+        : {
             fontFamily: 'var(--font-mono, JetBrains Mono, monospace)',
             primaryColor: '#fbfbfa',
             primaryTextColor: '#212529',
@@ -163,9 +197,49 @@
             edgeLabelBackground: '#ffffff',
             titleColor: '#1a1d20',
           },
-        });
+    };
+  }
+
+  async function getMermaidInstance() {
+    if (mermaidLoaded && (window as any).mermaid) {
+      return (window as any).mermaid;
+    }
+    if (mermaidLoadingPromise) {
+      return mermaidLoadingPromise;
+    }
+
+    mermaidLoadingPromise = (async () => {
+      try {
+        const mermaidModule = await import('mermaid');
+        const mermaid = mermaidModule.default || mermaidModule;
+        mermaid.initialize(getMermaidConfig());
         (window as any).mermaid = mermaid;
         mermaidLoaded = true;
+
+        // Re-render diagrams when theme changes
+        document.addEventListener('theme-changed', async () => {
+          try {
+            mermaid.mermaidAPI?.reset?.();
+            mermaid.initialize(getMermaidConfig());
+            const isDark = isCurrentDark();
+            const cards = document.querySelectorAll<HTMLElement>('.mermaid-rendered-card');
+            for (const card of Array.from(cards)) {
+              const code = extractMermaidCode(card);
+              if (!code) continue;
+              diagramCount++;
+              const uniqueId = `mermaid-svg-theme-${Date.now()}-${diagramCount}`;
+              const prepared = prepareMermaidCode(code, isDark);
+              const { svg } = await mermaid.render(uniqueId, prepared);
+              const viewport = card.querySelector('.mermaid-svg-viewport');
+              if (viewport) {
+                viewport.innerHTML = svg;
+              }
+            }
+          } catch (e) {
+            console.warn('[Mermaid] Re-render error on theme change:', e);
+          }
+        });
+
         return mermaid;
       } catch (err) {
         console.error('[Mermaid] Failed to load mermaid library:', err);
@@ -222,7 +296,9 @@
       const uniqueId = `mermaid-svg-${Date.now()}-${diagramCount}`;
 
       try {
-        const { svg } = await mermaid.render(uniqueId, code);
+        const isDark = isCurrentDark();
+        const prepared = prepareMermaidCode(code, isDark);
+        const { svg } = await mermaid.render(uniqueId, prepared);
 
         const card = document.createElement('div');
         card.className = 'mermaid-rendered-card';
@@ -860,13 +936,71 @@
   }
 
   .mermaid-rendered-card:hover {
-    border-color: #c4c4be;
+    border-color: var(--border-hover);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   }
 
   .mermaid-rendered-card:focus-visible {
-    border-color: var(--text-link, #227ce8);
-    box-shadow: 0 0 0 3px rgba(34, 124, 232, 0.2);
+    border-color: var(--text-link);
+    box-shadow: 0 0 0 3px rgba(235, 203, 139, 0.2);
+  }
+
+  html.dark .mermaid-rendered-card,
+  [data-theme="dark"] .mermaid-rendered-card {
+    background: var(--bg-surface);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  html.dark .mermaid-rendered-card:hover,
+  [data-theme="dark"] .mermaid-rendered-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Ensure text & edges inside Mermaid SVG are always sharp and contrasty in dark mode */
+  html.dark .mermaid-rendered-card svg text,
+  [data-theme="dark"] .mermaid-rendered-card svg text,
+  html.dark .media-modal-diagram-card svg text,
+  [data-theme="dark"] .media-modal-diagram-card svg text {
+    fill: var(--text-primary) !important;
+  }
+
+  html.dark .mermaid-rendered-card svg .label,
+  [data-theme="dark"] .mermaid-rendered-card svg .label,
+  html.dark .media-modal-diagram-card svg .label,
+  [data-theme="dark"] .media-modal-diagram-card svg .label {
+    color: var(--text-primary) !important;
+  }
+
+  html.dark .mermaid-rendered-card svg .edgeLabel,
+  [data-theme="dark"] .mermaid-rendered-card svg .edgeLabel,
+  html.dark .media-modal-diagram-card svg .edgeLabel,
+  [data-theme="dark"] .media-modal-diagram-card svg .edgeLabel {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-secondary) !important;
+  }
+
+  html.dark .mermaid-rendered-card svg .edgeLabel rect,
+  [data-theme="dark"] .mermaid-rendered-card svg .edgeLabel rect,
+  html.dark .media-modal-diagram-card svg .edgeLabel rect,
+  [data-theme="dark"] .media-modal-diagram-card svg .edgeLabel rect {
+    fill: var(--bg-surface) !important;
+  }
+
+  html.dark .mermaid-rendered-card svg .flowchart-link,
+  [data-theme="dark"] .mermaid-rendered-card svg .flowchart-link,
+  html.dark .media-modal-diagram-card svg .flowchart-link,
+  [data-theme="dark"] .media-modal-diagram-card svg .flowchart-link {
+    stroke: var(--text-muted) !important;
+  }
+
+  html.dark .mermaid-rendered-card svg .marker,
+  [data-theme="dark"] .mermaid-rendered-card svg .marker,
+  html.dark .media-modal-diagram-card svg .marker,
+  [data-theme="dark"] .media-modal-diagram-card svg .marker {
+    fill: var(--text-muted) !important;
+    stroke: var(--text-muted) !important;
   }
 
   .mermaid-card-header {
@@ -1170,7 +1304,8 @@
   }
 
   .media-modal-diagram-card {
-    background: #ffffff;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 24px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);

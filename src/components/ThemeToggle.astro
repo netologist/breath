@@ -1,0 +1,287 @@
+---
+interface Props {
+  class?: string;
+  showLabel?: boolean;
+}
+
+const { class: className = '', showLabel = false } = Astro.props;
+---
+
+<button
+  type="button"
+  class={`theme-toggle ${className}`.trim()}
+  aria-label="Toggle dark mode"
+  title="Toggle dark / light theme"
+>
+  <span class="theme-icon-wrap">
+    <!-- Sun Icon (shown in dark mode to switch to light) -->
+    <svg
+      class="theme-icon sun-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2"></path>
+      <path d="M12 20v2"></path>
+      <path d="m4.93 4.93 1.41 1.41"></path>
+      <path d="m17.66 17.66 1.41 1.41"></path>
+      <path d="M2 12h2"></path>
+      <path d="M20 12h2"></path>
+      <path d="m6.34 17.66-1.41 1.41"></path>
+      <path d="m19.07 4.93-1.41 1.41"></path>
+    </svg>
+
+    <!-- Moon Icon (shown in light mode to switch to dark) -->
+    <svg
+      class="theme-icon moon-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+    </svg>
+  </span>
+
+  {showLabel && (
+    <span class="theme-text">
+      <span class="theme-label sun-label">theme: light</span>
+      <span class="theme-label moon-label">theme: dark</span>
+    </span>
+  )}
+</button>
+
+<script>
+  (function () {
+    function getStoredTheme(): string | null {
+      try {
+        const local = localStorage.getItem('theme');
+        if (local) return local;
+        const match = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+        if (match) return decodeURIComponent(match[1]);
+      } catch (e) {}
+      return null;
+    }
+
+    function isCurrentDark(): boolean {
+      const doc = document.documentElement;
+      if (doc.classList.contains('dark') || doc.getAttribute('data-theme') === 'dark') {
+        return true;
+      }
+      if (doc.classList.contains('light') || doc.getAttribute('data-theme') === 'light') {
+        return false;
+      }
+      const stored = getStoredTheme();
+      if (stored === 'dark') return true;
+      if (stored === 'light') return false;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function applyTheme(theme: 'light' | 'dark', persist = true) {
+      const doc = document.documentElement;
+      const isDark = theme === 'dark';
+
+      if (isDark) {
+        doc.classList.add('dark');
+        doc.classList.remove('light');
+        doc.setAttribute('data-theme', 'dark');
+        doc.style.colorScheme = 'dark';
+      } else {
+        doc.classList.remove('dark');
+        doc.classList.add('light');
+        doc.setAttribute('data-theme', 'light');
+        doc.style.colorScheme = 'light';
+      }
+
+      if (persist) {
+        try {
+          localStorage.setItem('theme', theme);
+          const maxAge = 60 * 60 * 24 * 365; // 1 year
+          document.cookie = `theme=${encodeURIComponent(theme)};path=/;max-age=${maxAge};SameSite=Lax`;
+        } catch (e) {}
+      }
+
+      // Update button aria attributes
+      document.querySelectorAll('.theme-toggle').forEach((btn) => {
+        btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+        btn.setAttribute(
+          'aria-label',
+          isDark ? 'Switch to light mode' : 'Switch to dark mode'
+        );
+        btn.setAttribute(
+          'title',
+          isDark ? 'Switch to light mode' : 'Switch to dark mode'
+        );
+      });
+
+      // Dispatch custom event for external components (e.g. Mermaid re-render)
+      document.dispatchEvent(
+        new CustomEvent('theme-changed', {
+          detail: { theme, isDark },
+        })
+      );
+    }
+
+    function toggleTheme() {
+      const currentDark = isCurrentDark();
+      applyTheme(currentDark ? 'light' : 'dark', true);
+    }
+
+    function setupButtons() {
+      const buttons = document.querySelectorAll('.theme-toggle');
+      buttons.forEach((btn) => {
+        // Prevent duplicate listener attachment
+        if ((btn as any).__themeToggleBound) return;
+        (btn as any).__themeToggleBound = true;
+
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleTheme();
+        });
+      });
+
+      // Synchronize aria attributes with current state
+      const isDark = isCurrentDark();
+      buttons.forEach((btn) => {
+        btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+        btn.setAttribute(
+          'aria-label',
+          isDark ? 'Switch to light mode' : 'Switch to dark mode'
+        );
+        btn.setAttribute(
+          'title',
+          isDark ? 'Switch to light mode' : 'Switch to dark mode'
+        );
+      });
+    }
+
+    // Initialize listeners
+    setupButtons();
+    document.addEventListener('astro:page-load', setupButtons);
+
+    // Watch OS system preference changes (if user hasn't explicitly set theme)
+    if (window.matchMedia) {
+      window
+        .matchMedia('(prefers-color-scheme: dark)')
+        .addEventListener('change', (e) => {
+          if (!getStoredTheme()) {
+            applyTheme(e.matches ? 'dark' : 'light', false);
+          }
+        });
+    }
+  })();
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-radius: var(--radius);
+    transition: color var(--transition), background-color var(--transition), transform 0.15s ease;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .theme-toggle:hover {
+    color: var(--text-link);
+    transform: rotate(12deg);
+  }
+
+  .theme-toggle:focus-visible {
+    outline: 2px solid var(--text-link);
+    outline-offset: 2px;
+  }
+
+  .theme-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    pointer-events: none;
+  }
+
+  /* Sun icon is visible in dark mode, hidden in light mode */
+  .sun-icon {
+    display: none;
+  }
+  .moon-icon {
+    display: block;
+  }
+
+  .theme-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .theme-text {
+    font-size: inherit;
+    font-family: inherit;
+    font-style: inherit;
+    line-height: 1;
+    margin-left: 6px;
+    white-space: nowrap;
+  }
+
+  .sun-label {
+    display: none;
+  }
+  .moon-label {
+    display: inline;
+  }
+
+  :global(html.dark) .sun-icon,
+  :global([data-theme="dark"]) .sun-icon {
+    display: block;
+  }
+  :global(html.dark) .moon-icon,
+  :global([data-theme="dark"]) .moon-icon {
+    display: none;
+  }
+
+  :global(html.dark) .sun-label,
+  :global([data-theme="dark"]) .sun-label {
+    display: inline;
+  }
+  :global(html.dark) .moon-label,
+  :global([data-theme="dark"]) .moon-label {
+    display: none;
+  }
+
+  /* Support OS prefers-color-scheme dark when no explicit class is set */
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"]):not(.light)) .sun-icon {
+      display: block;
+    }
+    :global(:root:not([data-theme="light"]):not(.light)) .moon-icon {
+      display: none;
+    }
+    :global(:root:not([data-theme="light"]):not(.light)) .sun-label {
+      display: inline;
+    }
+    :global(:root:not([data-theme="light"]):not(.light)) .moon-label {
+      display: none;
+    }
+  }
+</style>

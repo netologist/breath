@@ -27,6 +27,31 @@ const rssUrl = url('/rss.xml');
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Zero-FOUT Theme Initialization: Sync from localStorage / Cookie / System preference -->
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          if (!stored) {
+            var match = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+            if (match) stored = decodeURIComponent(match[1]);
+          }
+          var theme = stored;
+          if (!theme || theme === 'auto' || theme === 'system') {
+            theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
     <!-- Instant Local Font Preloading (Zero FOUT / Zero Swap) -->
     <link rel="preload" href={url('/fonts/yanone-kaffeesatz-latin-400-normal.woff2')} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={url('/fonts/yanone-kaffeesatz-latin-600-normal.woff2')} as="font" type="font/woff2" crossorigin />
@@ -68,7 +93,7 @@ const rssUrl = url('/rss.xml');
               <img id="ext-pop-favicon" class="ext-popover-favicon" src="" alt="" width="14" height="14" />
             </span>
             <span class="ext-popover-hostname" id="ext-pop-hostname"></span>
-            <span class="ext-popover-arrow">↗</span>
+            <svg class="ext-popover-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
           </div>
           <h4 id="ext-pop-title" class="ext-popover-title"></h4>
           <p id="ext-pop-desc" class="ext-popover-desc"></p>
@@ -81,7 +106,7 @@ const rssUrl = url('/rss.xml');
 
 <!-- ════════════════════════════════════════════════════════
      SITE-WIDE LINK & MEDIA ENGINE
-     - External link ↗ indicators + new tab target
+     - External link detection + new tab target
      - Non-intrusive hover preview popovers (OG metadata)
      - Twitter / X widgets auto-loader
      ════════════════════════════════════════════════════════ -->
@@ -105,7 +130,7 @@ const rssUrl = url('/rss.xml');
   } catch (e) {}
 
   // ──────────────────────────────────────────────────
-  // 1. External link ↗ indicator & target="_blank"
+  // 1. External link target="_blank" & rel marker
   // ──────────────────────────────────────────────────
   function markExternalLinks() {
     const ownHost = window.location.host;
@@ -307,32 +332,6 @@ const rssUrl = url('/rss.xml');
 </html>
 
 <style is:global>
-  /* ══════════════════════════════════════
-     EXTERNAL LINK ↗ INDICATOR
-  ══════════════════════════════════════ */
-  a.ext-link::after {
-    content: " ↗";
-    font-size: 0.8em;
-    line-height: 1;
-    display: inline-block;
-    opacity: 0.65;
-    transition: opacity var(--transition), transform var(--transition);
-    vertical-align: super;
-  }
-  a.ext-link:hover::after {
-    opacity: 1;
-    transform: translate(1px, -1px);
-  }
-
-  /* Exclusions */
-  .no-ext-icon a::after,
-  a.no-ext-icon::after,
-  .sidebar-social a::after,
-  .ext-popover a::after {
-    display: none !important;
-    content: none !important;
-  }
-
   /* ══════════════════════════════════════
      EXTERNAL LINK HOVER POPOVER CARD
   ══════════════════════════════════════ */

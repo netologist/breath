@@ -93,22 +93,22 @@ if (!isIndex && item) {
               <div class="pub-links">
                 {pub.data.url && (
                   <a href={pub.data.url} target="_blank" rel="noopener noreferrer" class="pub-link">
-                    Read Publication ↗
+                    Read Publication
                   </a>
                 )}
                 {pub.data.pdfUrl && (
                   <a href={pub.data.pdfUrl} target="_blank" rel="noopener noreferrer" class="pub-link pdf-link">
-                    PDF Download ↗
+                    PDF Download
                   </a>
                 )}
                 {pub.data.doi && (
                   <a href={`https://doi.org/${pub.data.doi}`} target="_blank" rel="noopener noreferrer" class="pub-link doi-link">
-                    DOI: {pub.data.doi} ↗
+                    DOI: {pub.data.doi}
                   </a>
                 )}
                 {hasBody && (
                   <a href={url(`/publications/${pub.id}`)} class="pub-link notes-link">
-                    Abstract & Notes →
+                    Abstract & Notes
                   </a>
                 )}
               </div>
@@ -149,17 +149,17 @@ if (!isIndex && item) {
         <div class="detail-actions">
           {item.data.url && (
             <a href={item.data.url} target="_blank" rel="noopener noreferrer" class="btn-action">
-              Read Publication ↗
+              Read Publication
             </a>
           )}
           {item.data.pdfUrl && (
             <a href={item.data.pdfUrl} target="_blank" rel="noopener noreferrer" class="btn-action">
-              PDF Download ↗
+              PDF Download
             </a>
           )}
           {item.data.doi && (
             <a href={`https://doi.org/${item.data.doi}`} target="_blank" rel="noopener noreferrer" class="btn-action">
-              DOI: {item.data.doi} ↗
+              DOI: {item.data.doi}
             </a>
           )}
         </div>
@@ -208,7 +208,7 @@ if (!isIndex && item) {
   }
 
   .pub-card.is-featured {
-    border-left: 3px solid #b22;
+    border-left: 3px solid var(--title-accent);
   }
 
   .pub-header {

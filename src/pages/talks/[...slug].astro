@@ -96,17 +96,17 @@ if (!isIndex && item) {
               <div class="talk-links">
                 {talk.data.url && (
                   <a href={talk.data.url} target="_blank" rel="noopener noreferrer" class="talk-link">
-                    Watch Recording ↗
+                    Watch Recording
                   </a>
                 )}
                 {talk.data.slidesUrl && (
                   <a href={talk.data.slidesUrl} target="_blank" rel="noopener noreferrer" class="talk-link">
-                    Slide Deck ↗
+                    Slide Deck
                   </a>
                 )}
                 {hasBody && (
                   <a href={url(`/talks/${talk.id}`)} class="talk-link notes-link">
-                    Talk Notes →
+                    Talk Notes
                   </a>
                 )}
               </div>
@@ -151,12 +151,12 @@ if (!isIndex && item) {
         <div class="detail-actions">
           {item.data.url && (
             <a href={item.data.url} target="_blank" rel="noopener noreferrer" class="btn-action">
-              Watch Recording ↗
+              Watch Recording
             </a>
           )}
           {item.data.slidesUrl && (
             <a href={item.data.slidesUrl} target="_blank" rel="noopener noreferrer" class="btn-action">
-              Slide Deck ↗
+              Slide Deck
             </a>
           )}
         </div>
@@ -205,7 +205,7 @@ if (!isIndex && item) {
   }
 
   .talk-card.is-featured {
-    border-left: 3px solid #b22;
+    border-left: 3px solid var(--title-accent);
   }
 
   .talk-header {

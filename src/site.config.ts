@@ -58,7 +58,7 @@ export interface SiteConfig {
   author: AuthorConfig;
   social: SocialLink[];
   nav: NavItem[];
-  sourceLink: SourceLink;
+  sourceLink?: SourceLink;
   site: SiteMeta;
 }
 

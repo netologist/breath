@@ -266,8 +266,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
         <div class="stacked-topbar">
           <span class="stacked-note-title"></span>
           <div class="stacked-topbar-actions">
-            <a class="stacked-open-full" href="${BASE}/notes/${id}/" title="Open full page">↗</a>
-            <button class="stacked-close-btn" aria-label="Close" title="Close">✕</button>
+            <a class="stacked-open-full" href="${BASE}/notes/${id}/" title="Open full page" aria-label="Open full page"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>
+            <button class="stacked-close-btn" aria-label="Close" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
           </div>
         </div>
         <article class="note-article">${html}</article>
@@ -359,8 +359,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       errCol.innerHTML = `
         <div class="col-body" style="padding:32px 24px">
           <p style="color:var(--text-secondary);margin-bottom:12px">Couldn't load note.</p>
-          <a href="${BASE}/notes/${id}/" style="color:var(--text-link)">Open full note →</a>
-          <button class="stacked-close-btn" style="margin-top:16px;display:block" aria-label="Close">Close ✕</button>
+          <a href="${BASE}/notes/${id}/" style="color:var(--text-link)">Open full note</a>
+          <button class="stacked-close-btn" style="margin-top:16px;display:block" aria-label="Close">Close</button>
         </div>`;
       errCol.querySelector('.stacked-close-btn')?.addEventListener('click', () => removeColumn(id));
       stacksEl.appendChild(errCol);
@@ -779,6 +779,9 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     flex-shrink: 0;
   }
   .stacked-open-full {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 0.85rem;
     color: var(--text-muted);
     text-decoration: none;
@@ -792,6 +795,9 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     text-decoration: none;
   }
   .stacked-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
     font-size: 0.95rem;
@@ -895,7 +901,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     margin: 0 0 12px 0;
     font-weight: 700;
     letter-spacing: -0.01em;
-    color: #b22;
+    color: var(--title-accent);
     padding-right: 140px;
   }
   .note-desc {
