@@ -15,6 +15,9 @@ Designed for software engineers, systems thinkers, and technical writers who wan
 
 - **🌱 4-Stage Note Maturity Ladder:** Evolve ideas across a structured growth cycle (`📥 Captured` → `🌱 Seedling` → `🌿 Budding` → `🌲 Evergreen`).
 - **🔮 Native Obsidian Vault:** Open this repository directly in [Obsidian](https://obsidian.md) as a fully configured vault with pre-configured `[[wikilinks]]`, templates, and digital garden property badges.
+- **🎨 Nordic Dark Theme & Real-time Toggle:** Sleek dark mode inspired by the Nordic Neovim palette (`#222630` background, `#ECEFF4` text, `#EBCB8B` accents), zero-flicker SSR-safe cookie & `localStorage` persistence, OS auto-detection, and live Mermaid diagram theme re-rendering.
+- **💼 Engineering Portfolio & Talks Collections:** First-class collections for `projects`, `talks`, and `publications` with automatic video/slide embeds (YouTube, Vimeo, SlideShare, SpeakerDeck, Google Slides, DOI/PDF links) and smart conditional sidebar navigation.
+- **🔍 Interactive Media Lightbox:** Click-to-zoom modal lightbox for architecture diagrams (Mermaid) and inline images with responsive zoom and pan controls.
 - **⚙️ Centralized Configuration (`src/site.config.ts`):** Single typed configuration file for your full name, nickname (`a.k.a @...`), avatar, bio, dynamic social links, and sidebar navigation.
 - **📚 Andy Matuschak Stacked Notes (Desktop):** Click note links to slide new notes in horizontally as smooth accordion columns (`‹`), collapse side-strips, and sync state in URL query parameters.
 - **📱 100% Mobile Responsive:** Clean direct page navigation on mobile, full-screen slide-out TOC and navigation drawers, and touch-optimized list items.
@@ -24,6 +27,7 @@ Designed for software engineers, systems thinkers, and technical writers who wan
 - **🔗 Recursive Bi-directional Wikilinks & Backlinks:** Write `[[note-id]]` or `[[note-id|Custom Label]]` with automatic recursive resolution across subdirectories and build-time safety warnings against leaking private links in public posts.
 - **🔍 Instant Zero-Dependency Search & Sort:** Real-time search across titles, descriptions, and tags with top-corner `Updated` / `Created` timeline sorting.
 - **🖼️ Rich Embeds & Link Previews:** Automatic responsive 16:9 YouTube embeds, native X/Twitter embed widgets, and floating OpenGraph hover cards for external URLs.
+
 
 ---
 
@@ -76,6 +80,9 @@ You can open this project directory directly in **Obsidian** as an out-of-the-bo
      - `new-evergreen.md` — Deep reference note
      - `new-blog-post.md` — Blog article
      - `new-capture.md` — Private research capture
+     - `new-project.md` — Engineering portfolio project showcase
+     - `new-talk.md` — Conference presentation & slides
+     - `new-publication.md` — Academic paper / research publication
 
 ---
 
@@ -103,13 +110,16 @@ export const siteConfig = {
 
   // Sidebar Navigation Items
   nav: [
-    { href: '/about',      label: 'about' },
-    { href: '/blog',       label: 'posts' },
-    { href: '/notes',      label: 'notes' },
-    { href: '/categories', label: 'categories' },
-    { href: '/series',     label: 'series' },
-    { href: '/tags',       label: 'tags' },
-    { href: '/archive',    label: 'archive' },
+    { href: '/about',        label: 'about' },
+    { href: '/blog',         label: 'posts' },
+    { href: '/notes',        label: 'notes' },
+    { href: '/projects',     label: 'projects' },     // Conditionally visible (hidden if folder is empty)
+    { href: '/talks',        label: 'talks' },        // Conditionally visible (hidden if folder is empty)
+    { href: '/publications', label: 'publications' }, // Conditionally visible (hidden if folder is empty)
+    { href: '/categories',   label: 'categories' },
+    { href: '/series',       label: 'series' },
+    { href: '/tags',         label: 'tags' },
+    { href: '/archive',      label: 'archive' },
   ],
 
   // Source Repository Link
@@ -127,6 +137,8 @@ export const siteConfig = {
 };
 ```
 
+> **💡 Smart Conditional Navigation:** The sidebar routes for `/projects`, `/talks`, and `/publications` are evaluated at build time. If their corresponding content directories contain no `.md`/`.mdx` files, the navigation items are cleanly omitted from the sidebar to avoid broken links or empty pages.
+
 ---
 
 ## 📂 Project Structure
@@ -135,8 +147,11 @@ export const siteConfig = {
 ├── .obsidian/                # Obsidian vault configuration, templates & CSS snippets
 ├── content/                  # Your site content (gitignored by default)
 │   ├── blog/                 # Public blog articles (.md / .mdx)
-│   └── notes/                # Public garden notes (.md / .mdx)
-│       └── private/          # Private / captured notes (auth-gated)
+│   ├── notes/                # Public garden notes (.md / .mdx)
+│   │   └── private/          # Private / captured notes (auth-gated)
+│   ├── projects/             # Engineering portfolio projects (.md / .mdx)
+│   ├── talks/                # Conference talks & presentations (.md / .mdx)
+│   └── publications/         # Research papers & academic articles (.md / .mdx)
 ├── example-content/          # Tracked demo content for fresh clones
 ├── docs/
 │   ├── decisions/            # Architecture Decision Records (ADR-001 to ADR-008)
@@ -198,6 +213,92 @@ updated: 2026-08-28
 
 Notes can link to other notes seamlessly with `[[note-slug]]` or `[[note-slug|Custom Label]]`.
 ```
+
+### Showcasing Projects (`content/projects/my-project.md`)
+
+```markdown
+---
+title: "Breath Digital Garden"
+description: "A minimalist digital garden and blog theme engineered for Astro."
+date: 2026-08-20
+tags: ["astro", "typescript", "design-systems"]
+url: "https://netologist.github.io/breath"
+repo: "https://github.com/netologist/breath"
+status: active          # active | completed | wip | archived
+role: "Creator"
+featured: true
+---
+
+Project overview, architecture diagrams, tech stack breakdown, and roadmap.
+```
+
+### Documenting Talks & Slides (`content/talks/my-talk.md`)
+
+```markdown
+---
+title: "Scaling Goroutines & Concurrency Patterns in Production"
+description: "Deep dive into goroutine lifecycles, channel patterns, and memory leaks."
+date: 2026-05-20
+event: "GopherCon Europe 2026"
+location: "Berlin, Germany"
+url: "https://www.youtube.com/watch?v=dsTXcSeAZq8"
+slidesUrl: "https://speakerdeck.com/player/a3674bbec0c44fb7b4df4c356e9c4038"
+tags: ["go", "concurrency", "performance"]
+language: "en"
+featured: true
+---
+
+Talk summary and key takeaways. 
+Breath automatically detects video URLs (YouTube, Vimeo) and presentation URLs (SpeakerDeck, SlideShare, Google Slides) to render responsive embeds right at the top of your talk page!
+```
+
+### Listing Publications & Research (`content/publications/my-paper.md`)
+
+```markdown
+---
+title: "Evaluating Latency and Partition Tolerance in Multi-Raft Clusters"
+description: "An empirical study analyzing quorum consensus behaviors during cross-datacenter partitions."
+date: 2025-06-18
+venue: "ACM SIGOPS Operating Systems Review"
+authors:
+  - "Hüseyin Özgan"
+  - "Jane Smith"
+url: "https://doi.org/10.1145/example-paper"
+pdfUrl: "https://arxiv.org/pdf/2301.00001.pdf"
+doi: "10.1145/3456789.012345"
+tags: ["distributed-systems", "raft", "research"]
+featured: true
+---
+
+Abstract and key research findings. Breath displays quick-access badges for direct PDF reading and DOI citations.
+```
+
+---
+
+## 🎨 Theme & Appearance
+
+Breath features a clean Light theme and a high-contrast **Nordic Dark Theme** inspired by the Nordic Neovim palette.
+
+### Nordic Color Palette Tokens
+
+| Token | Light Theme | Dark Theme (Nordic) | Role |
+| :--- | :--- | :--- | :--- |
+| `--bg` | `#ffffff` | `#222630` (Nordic black2) | Base page background |
+| `--bg-surface` | `#f8f8f6` | `#1E222A` (Nordic black1) | Card surfaces & sidebar drawer |
+| `--border` | `#e4e4e0` | `#3B4252` (Nordic gray2) | Dividers & note borders |
+| `--text-primary` | `#212529` | `#ECEFF4` (Nordic white3) | High-contrast body & heading text |
+| `--text-secondary` | `#5a6070` | `#D8DEE9` (Nordic white1) | Secondary descriptions |
+| `--text-muted` | `#9aa0ab` | `#8FBCBB` (Nordic cyan) | Metadata, dates & tags |
+| `--text-link` | `#227ce8` | `#EBCB8B` (Nordic yellow) | Hyperlinks & active states |
+| `--title-accent` | `#b22` | `#D08770` (Nordic orange) | Section titles & decorative accents |
+
+### Zero-Flicker Theme Engine
+
+1. **Seamless Toggle:** Integrated right into the sidebar navigation list (`theme: dark / light`) on desktop and as an icon button in the mobile sticky header.
+2. **SSR-Safe & Zero-FOUT:** Themes are persisted to both `localStorage` and `cookie` (`theme=dark|light`). An inline `<head>` script reads the state and applies `html.dark` before the first paint, eliminating any white flash during page transitions.
+3. **OS Auto-Detection:** Automatically matches `prefers-color-scheme: dark` when no explicit user preference is stored.
+4. **Live Mermaid Re-theming:** Whenever the theme toggles, a custom `theme-changed` DOM event is dispatched so interactive Mermaid diagrams re-render instantly with matching light or dark styling.
+
 
 ---
 
